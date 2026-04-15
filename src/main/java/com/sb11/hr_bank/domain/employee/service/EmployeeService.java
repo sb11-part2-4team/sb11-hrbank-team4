@@ -65,6 +65,10 @@ public class EmployeeService {
 //    public List<EmployeeDto> findAllByCondition(); 추가 예정
 
     public void update(Long id, EmployeeUpdateRequest dto, FileEntity file) {
+        if(employeeRepository.findByEmail(dto.email()).isPresent()) {
+            throw new RuntimeException("Duplicate email");
+        }
+        
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
 
