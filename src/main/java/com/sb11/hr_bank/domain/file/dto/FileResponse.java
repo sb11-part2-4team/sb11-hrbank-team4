@@ -4,6 +4,6 @@ public record FileResponse(
     Long id,
     String name,
     String contentType,
-    Long Size
+    Long size
 ) {
 }
