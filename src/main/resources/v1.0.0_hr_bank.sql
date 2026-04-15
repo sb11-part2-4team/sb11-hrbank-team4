@@ -1,29 +1,35 @@
+DROP TABLE IF EXISTS change_detail_logs;
+DROP TABLE IF EXISTS change_logs;
+DROP TABLE IF EXISTS backups;
+DROP TABLE IF EXISTS employees;
+DROP TABLE IF EXISTS departments;
+DROP TABLE IF EXISTS file_entities;
 
 CREATE TABLE IF NOT EXISTS departments(
 
-    id BIGINT PRIMARY KEY,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP  NOT NULL,
-    updated_at TIMESTAMPTZ,
-    name VARCHAR(20) NOT NULL UNIQUE,
+                                          id BIGINT PRIMARY KEY,
+                                          created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP  NOT NULL,
+                                          updated_at TIMESTAMPTZ,
+                                          name VARCHAR(20) NOT NULL UNIQUE,
     description VARCHAR(100),
     established_date DATE NOT NULL
 
-);
+    );
 
-CREATE TABLE IF NOT EXISTS files (
-    id BIGINT PRIMARY KEY,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP  NOT NULL,
-    name VARCHAR(200) NOT NULL,
+CREATE TABLE IF NOT EXISTS file_entities (
+                                             id BIGINT PRIMARY KEY,
+                                             created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP  NOT NULL,
+                                             name VARCHAR(200) NOT NULL,
     content_type VARCHAR(30) NOT NULL,
     size BIGINT NOT NULL
 
-);
+    );
 
 CREATE TABLE IF NOT EXISTS employees (
-    id BIGINT PRIMARY KEY,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP  NOT NULL,
-    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    name VARCHAR(20) NOT NULL,
+                                         id BIGINT PRIMARY KEY,
+                                         created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP  NOT NULL,
+                                         updated_at TIMESTAMPTZ ,
+                                         name VARCHAR(20) NOT NULL,
     email VARCHAR(100) NOT NULL UNIQUE,
     employee_number VARCHAR(100) NOT NULL,
     department_id BIGINT NOT NULL,
@@ -35,55 +41,55 @@ CREATE TABLE IF NOT EXISTS employees (
     CHECK (status IN('재직중', '휴직중', '퇴사') ),
 
     FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE NO ACTION,
-    FOREIGN KEY (profile_image_id) REFERENCES files(id) ON DELETE SET NULL
+    FOREIGN KEY (profile_image_id) REFERENCES file_entities(id) ON DELETE SET NULL
 
-);
+    );
 
 CREATE TABLE IF NOT EXISTS change_logs(
 
-    id BIGINT PRIMARY KEY,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP  NOT NULL,
-    employee_id BIGINT NOT NULL,
-    type VARCHAR(20) NOT NULL,
+                                          id BIGINT PRIMARY KEY,
+                                          created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP  NOT NULL,
+                                          employee_id BIGINT NOT NULL,
+                                          type VARCHAR(20) NOT NULL,
     memo text,
     ip_address VARCHAR(20) NOT NULL DEFAULT '127.0.0.1',
 
-    CHECK (type IN('직원 추가', '정보 수정', '직원 삭제', '건너뜀') ),
+    CHECK (type IN('직원 추가', '정보 수정', '직원 삭제') ),
 
-    FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE SET NULL
+    FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE NO ACTION
 
 
-);
+    );
 
 CREATE TABLE IF NOT EXISTS change_detail_logs(
 
-    id BIGINT PRIMARY KEY,
-    created_at TIMESTAMPTZ NOT NULL,
-    change_log_id BIGINT NOT NULL,
-    property_name varchar(30) NOT NULL,
+                                                 id BIGINT PRIMARY KEY,
+                                                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP  NOT NULL,
+                                                 change_log_id BIGINT NOT NULL,
+                                                 property_name varchar(30) NOT NULL,
     before TEXT,
     after TEXT,
 
     CHECK (property_name IN ('이름','이메일','부서','직함','고용일','상태','프로필')),
 
-    FOREIGN KEY (change_log_id) REFERENCES change_logs(id) ON DELETE SET NULL
-);
+    FOREIGN KEY (change_log_id) REFERENCES change_logs(id) ON DELETE CASCADE
+    );
 
 CREATE TABLE IF NOT EXISTS backups(
 
-    id BIGINT PRIMARY KEY ,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP  NOT NULL,
-    worker VARCHAR(20) NOT NULL,
+                                      id BIGINT PRIMARY KEY ,
+                                      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP  NOT NULL,
+                                      worker VARCHAR(20) NOT NULL,
     started_at TIMESTAMPTZ NOT NULL,
     ended_at TIMESTAMPTZ,
     status VARCHAR(20) NOT NULL,
-    file_id BIGINT NOT NULL,
+    file_id BIGINT,
 
-    CHECK (status IN ('진행중', '완료', '실패')),
+    CHECK (status IN ('진행중', '완료', '실패', '건너뜀')),
 
-    FOREIGN KEY (file_id) REFERENCES files(id) ON DELETE SET NULL
+    FOREIGN KEY (file_id) REFERENCES file_entities(id) ON DELETE SET NULL
 
-);
+    );
 
 
 
