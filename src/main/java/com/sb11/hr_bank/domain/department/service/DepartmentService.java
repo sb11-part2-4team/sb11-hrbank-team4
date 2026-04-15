@@ -12,19 +12,53 @@ import java.util.List;
 @RequiredArgsConstructor // final이 붙은 레포지토리를 스프링이 자동으로 연결
 @Transactional(readOnly = true) // 테이터를 "읽기만" 하는 작업에서 성능 최적화
 
-
 public class DepartmentService {
   private final DepartmentRepository departmentRepository;
 
+  // 부서 등록 기능 구현
+
   @Transactional // 데이터를 저장하므로 "읽기전용"을해제 트랜잭션을 적용
   public Long save(Department department) {
-    // 부서 정보를 DB에 저장, 생성된 번호(ID)를 반환
+    if (departmentRepository.existsByName(department.getName())) {
+      throw new IllegalArgumentException("이미 존재하는 부서명 입니다");
+    } // 입렵한 부서명이 이미 DB에 있는지 확인하고 중복 메세지 구현
+
     return departmentRepository.save(department).getId();
+  } // 중복이 없으면 DB에 저장
+
+
+  // 부서 수정 기능 구현
+
+  @Transactional
+  public void update(Long id, Department updateParam) {
+
+    Department department = departmentRepository.findById(id)
+        .orElseThrow(() -> new IllegalArgumentException("해당 부서가 없습니다. id=" + id));
+    // 먼저 수정할 부서가 DB에 있는지 확인하고 가져옴
+
+    if (!department.getName().equals(updateParam.getName()) &&
+        departmentRepository.existsByName(updateParam.getName())) {
+      throw new IllegalArgumentException("이미 존재하는 부서명 입니다");
+    }
+    // 부서명을 바꾸려고 할 때, 이미 다른 부서에서 쓰고 있는 부서명인지 체크
+
+      department.setName(updateParam.getName());
+    department.setDescription(updateParam.getDescription());
+    department.setCreatedDate(updateParam.getCreatedDate());
   }
+  // Entity의 내용을 새로운 값으로 변경
+
+  @Transactional
+  public void delete(Long id) {
+
+    departmentRepository.deleteById(id);
+  }
+  // 부서 삭제 전, 소속 직원이 있는지 확인하는
+
 
   public List<Department> findAll() {
-    // DB에 저장된 모든 부서 정보를 리스트 형태로 가져옴
+
     return departmentRepository.findAll();
   }
-
+  // 리포지토리에게 DB에 있는 모든 부서 정보를 볼수 있게
 }
