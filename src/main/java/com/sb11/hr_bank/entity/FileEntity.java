@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "files")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class File {
+public class FileEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -36,7 +36,7 @@ public class File {
   @Column(nullable = false, updatable = false)
   private Instant createdAt;
 
-  public File(String name, String contentType, Long size, String savedPath) {
+  public FileEntity(String name, String contentType, Long size, String savedPath) {
     this.name = name;
     this.contentType = contentType;
     this.size = size;
