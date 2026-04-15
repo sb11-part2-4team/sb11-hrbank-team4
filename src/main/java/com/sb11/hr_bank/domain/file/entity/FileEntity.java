@@ -1,4 +1,4 @@
-package com.sb11.hr_bank.entity;
+package com.sb11.hr_bank.domain.file.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
