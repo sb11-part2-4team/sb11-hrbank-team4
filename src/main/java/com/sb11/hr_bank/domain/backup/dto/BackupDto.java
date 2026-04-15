@@ -1,6 +1,7 @@
 package com.sb11.hr_bank.domain.backup.dto;
 
 import com.sb11.hr_bank.domain.backup.entity.BackupStatus;
+import com.sb11.hr_bank.domain.file.dto.FileResponse;
 import java.time.Instant;
 
 public record BackupDto(
@@ -9,7 +10,7 @@ public record BackupDto(
     Instant startedAt,
     Instant endedAt,
     BackupStatus status,
-    FileEntity file
+    FileResponse file
 ) {
 
 }
