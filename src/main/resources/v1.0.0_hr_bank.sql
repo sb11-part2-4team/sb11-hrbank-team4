@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS change_logs(
     memo text,
     ip_address VARCHAR(20) NOT NULL DEFAULT '127.0.0.1',
 
-    CHECK (type IN('직원 추가', '정보 수정', '직원 삭제') ),
+    CHECK (type IN('직원 추가', '정보 수정', '직원 삭제', '건너뜀') ),
 
     FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE SET NULL
 
