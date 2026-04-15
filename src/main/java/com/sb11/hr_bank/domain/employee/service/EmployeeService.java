@@ -62,12 +62,14 @@ public class EmployeeService {
 
 //    public List<EmployeeDto> findAllByCondition(); 추가 예정
 
-    public void update(Long id,EmployeeUpdateRequest dto, FileEntity file) {
+    public void update(Long id, EmployeeUpdateRequest dto, FileEntity file) {
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
 
         Department department = departmentRepository.findById(dto.departmentId())
                 .orElseThrow(() -> new RuntimeException("Department not found"));
+
+        FileEntity fileEntity = file != null ? file : employee.getProfileImage();
 
         employee.update(
                 dto.name(),
@@ -76,7 +78,7 @@ public class EmployeeService {
                 dto.position(),
                 dto.hireDate(),
                 dto.status(),
-                file
+                fileEntity
         );
     }
 
