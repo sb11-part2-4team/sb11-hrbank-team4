@@ -1,6 +1,7 @@
 package com.sb11.hr_bank.domain.department.entity;
 
 import jakarta.persistence.*;
+import java.time.LocalDate;
 import lombok.*;
 
 @Entity // Department Class를 부서 정보를 담는 DB테이블로 사용
@@ -15,9 +16,12 @@ public class Department {
   @GeneratedValue(strategy = GenerationType.IDENTITY) // 번호를 순서대로 생성함 (1..2..3)
   private Long id;
 
-  @Column(nullable = false) // DB 저장시 공란을 허용 안함
-  private String departmentName; // 부서명
+  @Column(nullable = false)
+  private String name; // 기존 departmentName을 'name'으로 간결하게 변경
 
-  @Column(nullable = false) // DB 저장시 공란을 허용 안함
-  private String managerName;    // 부서장명
+  @Column(columnDefinition = "TEXT")
+  private String description; // 부서에 대한 상세 '설명'을 저장하는 변수 (긴 글을 위해 TEXT 타입 지정)
+
+  @Column(nullable = false)
+  private LocalDate createdDate; // 부서 '설립일'을 저장하는 날짜 변수
 }
