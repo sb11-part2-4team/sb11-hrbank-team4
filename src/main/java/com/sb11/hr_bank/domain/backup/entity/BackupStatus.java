@@ -1,4 +1,4 @@
-package com.sb11.hr_bank.backup.entity;
+package com.sb11.hr_bank.domain.backup.entity;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

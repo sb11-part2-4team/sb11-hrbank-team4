@@ -1,4 +1,4 @@
-package com.sb11.hr_bank.employee;
+package com.sb11.hr_bank.domain.employee.entity;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
