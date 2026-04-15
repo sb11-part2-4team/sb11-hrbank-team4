@@ -16,12 +16,13 @@ public class Department {
   @GeneratedValue(strategy = GenerationType.IDENTITY) // 번호를 순서대로 생성함 (1..2..3)
   private Long id;
 
-  @Column(nullable = false)
+  @Column(nullable = false) // 공란불가
   private String name; // 기존 departmentName을 'name'으로 간결하게 변경
 
-  @Column(columnDefinition = "TEXT")
-  private String description; // 부서에 대한 상세 '설명'을 저장하는 변수 (긴 글을 위해 TEXT 타입 지정)
+  @Column(columnDefinition = "TEXT") // 긴 글을 위해 TEXT 지정
+  private String description; // 부서에 대한 상세설명
 
-  @Column(nullable = false)
+  @Column(nullable = false) // 공란불가
+
   private LocalDate createdDate; // 부서 '설립일'을 저장하는 날짜 변수
 }
