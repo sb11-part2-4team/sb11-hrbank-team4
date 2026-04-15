@@ -16,7 +16,7 @@ public class Department {
   @GeneratedValue(strategy = GenerationType.IDENTITY) // 번호를 순서대로 생성함 (1..2..3)
   private Long id;
 
-  @Column(nullable = false) // 공란불가
+  @Column(nullable = false, unique = true) // 공란불가, 부서명중복불가
   private String name; // 기존 departmentName을 'name'으로 간결하게 변경
 
   @Column(columnDefinition = "TEXT") // 긴 글을 위해 TEXT 지정
