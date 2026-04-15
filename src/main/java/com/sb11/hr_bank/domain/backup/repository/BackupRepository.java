@@ -1,7 +1,7 @@
-package com.sb11.hr_bank.backup.repository;
+package com.sb11.hr_bank.domain.backup.repository;
 
-import com.sb11.hr_bank.backup.entity.Backup;
-import com.sb11.hr_bank.backup.entity.BackupStatus;
+import com.sb11.hr_bank.domain.backup.entity.Backup;
+import com.sb11.hr_bank.domain.backup.entity.BackupStatus;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 

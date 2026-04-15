@@ -1,7 +1,7 @@
-package com.sb11.hr_bank.backup.controller;
+package com.sb11.hr_bank.domain.backup.controller;
 
-import com.sb11.hr_bank.backup.entity.Backup;
-import com.sb11.hr_bank.backup.service.BackupService;
+import com.sb11.hr_bank.domain.backup.entity.Backup;
+import com.sb11.hr_bank.domain.backup.service.BackupService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,17 +20,5 @@ import org.springframework.web.bind.annotation.RestController;
 public class BackupController {
 
   private final BackupService backupService;
-
-  @GetMapping
-  public ResponseEntity<List<Backup>> findAll(
-      BackupCreateRequest dto
-  ) {
-    return ResponseEntity.ok(backupService.findAll());
-  }
-
-  @PostMapping
-  public ResponseEntity<Backup> create() {
-    return ResponseEntity.created();
-  }
 
 }

@@ -1,7 +1,7 @@
-package com.sb11.hr_bank.backup.service;
+package com.sb11.hr_bank.domain.backup.service;
 
-import com.sb11.hr_bank.backup.entity.Backup;
-import com.sb11.hr_bank.backup.repository.BackupRepository;
+import com.sb11.hr_bank.domain.backup.entity.Backup;
+import com.sb11.hr_bank.domain.backup.repository.BackupRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

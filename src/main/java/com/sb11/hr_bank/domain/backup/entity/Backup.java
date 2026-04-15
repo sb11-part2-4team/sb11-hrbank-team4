@@ -46,7 +46,7 @@ public class Backup { // extends BaseEntity {
   @JoinColumn(name = "file_id", nullable = true)
   private FileEntity fileId;
 
-  private Backup(String worker, Instant startedAt, Instant endedAt, BackupStatus status, FileEntity fileId) {
+  public Backup(String worker, Instant startedAt, Instant endedAt, BackupStatus status, FileEntity fileId) {
     this.worker = worker;
     this.startedAt = Instant.now();
     this.endedAt = Instant.now();
