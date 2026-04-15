@@ -1,4 +1,4 @@
-package com.sb11.hr_bank.entity;
+package com.sb11.hr_bank.domain.fileentity.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -30,7 +30,7 @@ public class FileEntity {
   @Column(nullable = false)
   private Long size;
 
-  @Column(nullable = false, length = 500)
+  @Column(name = "saved_path", nullable = false, length = 500)
   private String savedPath;
 
   @Column(nullable = false, updatable = false)

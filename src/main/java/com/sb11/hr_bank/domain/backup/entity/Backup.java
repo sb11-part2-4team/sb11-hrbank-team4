@@ -1,5 +1,6 @@
-package com.sb11.hr_bank.backup.entity;
+package com.sb11.hr_bank.domain.backup.entity;
 
+import com.sb11.hr_bank.domain.fileentity.entity.FileEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -16,7 +17,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "backup")
+@Table(name = "backups")
 @Getter @Setter
 public class Backup { // extends BaseEntity {
 
@@ -41,9 +42,9 @@ public class Backup { // extends BaseEntity {
   // Backup은 fileId를 참조하여 어떤 File인지 알아야함(단방향)
   @OneToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "file_id")
-  private File fileId;
+  private FileEntity fileId;
 
-  private Backup(String worker, Instant startedAt, Instant endedAt, BackupStatus status, File fileId) {
+  private Backup(String worker, Instant startedAt, Instant endedAt, BackupStatus status, FileEntity fileId) {
     this.worker = worker;
     this.startedAt = Instant.now();
     this.endedAt = Instant.now();

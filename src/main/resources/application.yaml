@@ -1,6 +1,13 @@
 spring:
   application:
     name: sb11-hrbank-team4
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/mydb
+    username: myuser
+    password: 1234
+    driver-class-name: org.postgresql.Driver
+
   jpa:
     hibernate:
       ddl-auto: none

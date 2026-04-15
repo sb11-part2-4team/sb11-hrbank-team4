@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS employees (
     status VARCHAR(20) NOT NULL,
     profile_image_id BIGINT,
 
-    CHECK (status IN('재직중', '휴직중', '퇴사') ),
+    check ( status IN('ACTIVE', 'ON_LEAVE', 'RESIGNED') ),
 
     FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE NO ACTION,
     FOREIGN KEY (profile_image_id) REFERENCES files(id) ON DELETE SET NULL

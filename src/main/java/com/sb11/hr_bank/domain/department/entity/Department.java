@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "department")
+@Table(name = "departments")
 @Getter @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -16,8 +16,8 @@ public class Department {
   private Long id;
 
   @Column(nullable = false)
-  private String departmentName; // 부서명
+  private String name; // 부서명
 
   @Column(nullable = false)
-  private String managerName;    // 부서장명
+  private String description;    // 부서장명
 }

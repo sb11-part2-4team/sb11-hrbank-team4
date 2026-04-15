@@ -1,7 +1,7 @@
-package com.sb11.hr_bank.employee;
+package com.sb11.hr_bank.domain.employee.entity;
 
-import com.sb11.hr_bank.department.Department;
-import com.sb11.hr_bank.file.File;
+import com.sb11.hr_bank.domain.department.entity.Department;
+import com.sb11.hr_bank.domain.fileentity.entity.FileEntity;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -24,7 +24,7 @@ import java.time.LocalDate;
 @Entity
 @Table(name = "employees")
 @NoArgsConstructor
-public class Employee {
+public class Employee { // extends BaseEntity
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -54,10 +54,10 @@ public class Employee {
 
     @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.REMOVE, orphanRemoval = true)
     @JoinColumn(name = "profile_image_id")
-    private File profileImage;
+    private FileEntity profileImage;
 
     public Employee(String name, String email, String employeeNumber, Department department,
-                    String position, LocalDate hireDate, File profileImage) {
+                    String position, LocalDate hireDate, FileEntity profileImage) {
         this.name = name;
         this.email = email;
         this.employeeNumber = employeeNumber;
@@ -70,7 +70,7 @@ public class Employee {
 
     public void update(String name, String email, Department department,
                   String position, LocalDate hireDate,
-                  EmployeeStatus employeeStatus, File profileImage) {
+                  EmployeeStatus employeeStatus, FileEntity profileImage) {
         this.name = name;
         this.email = email;
         this.department = department;
