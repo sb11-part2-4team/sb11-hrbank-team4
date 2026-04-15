@@ -21,8 +21,6 @@ public class GlobalExceptionHandler {
   }
 
 
-
-
   @ExceptionHandler(IllegalArgumentException.class)
   public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException e) {
     ErrorResponse errorResponse = new ErrorResponse(400,e.getMessage());
@@ -36,13 +34,18 @@ public class GlobalExceptionHandler {
     return ResponseEntity.status(500).body(errorResponse);
   }
 
+  @ExceptionHandler
+  public ResponseEntity<ErrorResponse> handleRuntimeException(RuntimeException e) {
+
+    ErrorResponse errorResponse = new ErrorResponse(500,e.getMessage());
+    return ResponseEntity.status(500).body(errorResponse);
+  }
 
 
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ErrorResponse> handleException(Exception e) {
 
-    ErrorResponse errorResponse = new ErrorResponse(500,"서버 내부에서 예상치 못한 오류가 발생했습니다.");
-    errorResponse.setDetails(e.getMessage());
+    ErrorResponse errorResponse = new ErrorResponse(500,e.getMessage());
     return ResponseEntity.status(500).body(errorResponse);
 
 
