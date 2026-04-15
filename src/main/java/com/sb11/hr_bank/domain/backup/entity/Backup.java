@@ -15,11 +15,10 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Entity
 @Table(name = "backups")
-@Getter @Setter
+@Getter
 @NoArgsConstructor
 public class Backup { // extends BaseEntity {
 
@@ -44,14 +43,28 @@ public class Backup { // extends BaseEntity {
   // Backup은 fileId를 참조하여 어떤 File인지 알아야함(단방향)
   @OneToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "file_id", nullable = true)
-  private FileEntity fileId;
+  private FileEntity file;
 
-  public Backup(String worker, Instant startedAt, Instant endedAt, BackupStatus status, FileEntity fileId) {
+  public Backup(String worker) {
     this.worker = worker;
     this.startedAt = Instant.now();
+    this.status = BackupStatus.IN_PROGRESS;
+  }
+
+  public void complete(FileEntity file) {
+    this.file = file;
     this.endedAt = Instant.now();
-    this.status = status;
-    this.fileId = fileId;
+    this.status = BackupStatus.COMPLETED;
+  }
+
+  public void fail() {
+    this.endedAt = Instant.now();
+    this.status = BackupStatus.FAILED;
+  }
+
+  public void skip() {
+    this.endedAt = Instant.now();
+    this.status = BackupStatus.SKIPPED;
   }
 }
 // 데이터 백업 관리
