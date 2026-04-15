@@ -1,8 +1,7 @@
-package com.sb11.hr_bank.domain.changelogs;
+package com.sb11.hr_bank.domain.changelogs.entity;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 
 @Getter
 @RequiredArgsConstructor

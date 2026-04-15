@@ -1,4 +1,4 @@
-package com.sb11.hr_bank.domain.changelogs;
+package com.sb11.hr_bank.domain.changelogs.entity;
 
 import com.sb11.hr_bank.employee.Employee;
 import jakarta.persistence.*;
