@@ -3,6 +3,7 @@ package com.sb11.hr_bank.domain.employee.service;
 import com.sb11.hr_bank.domain.department.entity.Department;
 import com.sb11.hr_bank.domain.department.repository.DepartmentRepository;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeUpdateRequest;
+import com.sb11.hr_bank.domain.employee.mapper.EmployeeMapper;
 import com.sb11.hr_bank.domain.employee.repository.EmployeeRepository;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeCreateRequest;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeDto;
@@ -21,6 +22,7 @@ public class EmployeeService {
 
     private final EmployeeRepository employeeRepository;
     private final DepartmentRepository departmentRepository;
+    private final EmployeeMapper employeeMapper;
 
     public EmployeeDto create(EmployeeCreateRequest dto, FileEntity file) {
         if(employeeRepository.findByEmail(dto.email()).isPresent()) {
@@ -49,7 +51,7 @@ public class EmployeeService {
 
         employeeRepository.save(employee);
 
-        return toDto(employee);
+        return employeeMapper.toDto(employee);
     }
 
     @Transactional(readOnly = true)
@@ -57,7 +59,7 @@ public class EmployeeService {
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
 
-        return toDto(employee);
+        return employeeMapper.toDto(employee);
     }
 
 //    public List<EmployeeDto> findAllByCondition(); 추가 예정
@@ -87,28 +89,5 @@ public class EmployeeService {
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
 
         employeeRepository.deleteById(id);
-    }
-
-    private EmployeeDto toDto(Employee employee) {
-        Department department = employee.getDepartment();
-
-        Long profileId = null;
-        FileEntity profile = employee.getProfileImage();
-        if(profile != null) {
-            profileId = profile.getId();
-        }
-
-        return new EmployeeDto(
-                employee.getId(),
-                employee.getName(),
-                employee.getEmail(),
-                employee.getEmployeeNumber(),
-                department.getId(),
-                department.getName(),
-                employee.getPosition(),
-                employee.getHireDate(),
-                employee.getEmployeeStatus().getLabel(),
-                profileId
-        );
     }
 }
