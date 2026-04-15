@@ -33,7 +33,7 @@ public class ChangeLog {
   @JoinColumn(name = "employee_id", nullable = false)
   private Employee employee;
 
-  @Enumerated(EnumType.STRING)
+  // @Enumerated(EnumType.STRING) - DB 확인 후 어노테이션 삭제 + 컨버터 클래스 생성
   @Column(nullable = false, length = 20)
   private ChangeLogType type;
 
@@ -44,7 +44,7 @@ public class ChangeLog {
   private String ipAddress;
 
   @OneToMany(mappedBy = "changeLog", cascade = CascadeType.ALL, orphanRemoval = true)
-  private List<ChangeDateilLog> details = new ArrayList<>();
+  private List<ChangeDetailLog> details = new ArrayList<>();
 
   @Builder
   public ChangeLog(Employee employee, ChangeLogType type, String memo, String ipAddress) {
