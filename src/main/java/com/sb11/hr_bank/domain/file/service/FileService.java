@@ -55,9 +55,6 @@ public class FileService {
         savedPath
     );
 
-    //DB에 정보 저장 후, 저장된 결과물 반환
-    FileEntity savedEntity = fileRepository.save(fileEntity);
-
     //저장된 파일의 ID 리턴
     return fileRepository.save(fileEntity);
   }
