@@ -12,6 +12,7 @@ import com.sb11.hr_bank.domain.file.service.FileService;
 import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -20,15 +21,18 @@ public class BasicBackupService implements BackupService {
   private final BackupRepository backupRepository;
   private final EmployeeRepository employeeRepository;
   private final FileRepository fileRepository;
+
+  private final FileService fileService;
   private final BackupMapper backupMapper;
 
 
   @Override
+  @Transactional
   public void startBackup(String worker) {
-    // 가장 최근 백업 시간을 가져옴(백업이 한번도 진행되지 않았을 때는 Instant.Min)
+    // 가장 최근 백업 시간을 가져옴(백업이 한번도 진행되지 않았을 때는 Instant.MIN)
     Instant lastBackupTime = backupRepository.findLastCompletedTime().orElse(Instant.MIN);
 
-    // 백업이 필요한지 유무를 파악, 사원의 변경 유무가 존재하는지
+    // 백업이 필요한지 유무를 파악하는 변수, 사원의 변경 유무가 존재하는지
     boolean needBackup = employeeRepository.existsByUpdatedAtAfter(lastBackupTime);
 
     // 백업이 필요하지 않을 경우(이미 백업 진행 후에 변경 이력이 없을 경우)
@@ -41,13 +45,14 @@ public class BasicBackupService implements BackupService {
 
     // 백업 시작(IN_PROGRESS 상태)
     Backup backup = Backup.create(worker);
-    backupRepository.save(backup);
 
-    FileEntity file = null;
+    FileEntity file;
     try {
+      // 정상적으로 백업 성공
+      // CSV 파일 생성, CSV 파일을 저장, 성공 상태로 전환
 
       // CSV 파일로 백업 데이터를 생성
-      file = FileService.createCsvBackup();
+      file = fileService.createCsvBackup();
 
       // CSV 파일을 저장
       fileRepository.save(file);
@@ -57,8 +62,19 @@ public class BasicBackupService implements BackupService {
 
     } catch (Exception e) {
       // 백업 실패(FAILED) 상태
-      backup.fail();
+      // log 파일 생성, log 파일을 저장, 실패 상태로 전환
+
+      // log 파일로 에러 로그 생성
+      file = fileService.createLogBackup();
+
+      // log 파일을 저장
+      fileRepository.save(file);
+
+      // 백업 실패(FAILED 상태)
+      backup.fail(file);
     }
+
+    backupRepository.save(backup);
 
   }
 
@@ -68,12 +84,14 @@ public class BasicBackupService implements BackupService {
   }
 
   @Override
+  @Transactional(readOnly = true)
   public BackupResponse findLatest() {
     Backup backup = backupRepository.findTopByStatusOrderByEndedAtDesc(BackupStatus.COMPLETED)
         .orElseThrow(
             () -> new IllegalArgumentException("완료된 백업이 없습니다.")
         );
 
-    return BackupResponse.from(backup);
+//    return BackupResponse.from(backup);
+    return backupMapper.from(backup);
   }
 }

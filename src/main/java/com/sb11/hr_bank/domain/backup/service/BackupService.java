@@ -4,7 +4,7 @@ import com.sb11.hr_bank.domain.backup.dto.BackupResponse;
 
 public interface BackupService {
 
-  // 백업 실행
+  // 백업 생성
   void startBackup(String worker);
 
   // 백업 목록 조회
