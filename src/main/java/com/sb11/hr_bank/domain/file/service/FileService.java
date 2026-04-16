@@ -26,7 +26,7 @@ public class FileService {
 
   //파일 업로드 클래스 (로컬 디스크 저장 및 DB 기록)
   @Transactional
-  public Long uploadFile(MultipartFile file) throws IOException {
+  public FileEntity uploadFile(MultipartFile file) throws IOException {
     //빈 파일 검증
     if (file == null || file.isEmpty()) {
       throw new IllegalArgumentException("업로드 된 파일이 없습니다.");
@@ -55,11 +55,8 @@ public class FileService {
         savedPath
     );
 
-    //DB에 정보 저장 후, 저장된 결과물 반환
-    FileEntity savedEntity = fileRepository.save(fileEntity);
-
     //저장된 파일의 ID 리턴
-    return savedEntity.getId();
+    return fileRepository.save(fileEntity);
   }
 
   //파일 메타데이터 단건 조회
