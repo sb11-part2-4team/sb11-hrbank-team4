@@ -46,40 +46,39 @@ public class Backup extends BaseEntity {
   @JoinColumn(name = "file_id", nullable = true)
   private FileEntity file;
 
-  protected Backup(String worker) {
+  protected Backup(String worker, BackupStatus status) {
     this.worker = worker;
     this.startedAt = Instant.now();
-    this.status = BackupStatus.IN_PROGRESS;
-  }
+    this.status = status;
 
-  public void complete(FileEntity file) {
-    this.file = file;
-    this.status = BackupStatus.COMPLETED;
-    this.endedAt = Instant.now();
-  }
-
-  public void fail() {
-    this.status = BackupStatus.FAILED;
-    this.endedAt = Instant.now();
-  }
-
-  private void skip() {
-    this.status = BackupStatus.SKIPPED;
-    this.endedAt = Instant.now();
+    // 스킵 상태일 경우 바로 종료
+    if (status != BackupStatus.IN_PROGRESS) {
+      this.endedAt = Instant.now();
+    }
   }
 
   // 정적 팩토리 메서드
   public static Backup skip(String worker) {
-    Backup backup = new Backup(worker);
-    backup.skip();
+    Backup backup = new Backup(worker, BackupStatus.SKIPPED);
     return backup;
   }
 
   public static Backup create(String worker) {
-    return new Backup(worker);
+    return new Backup(worker, BackupStatus.IN_PROGRESS);
+  }
+
+  public void complete(FileEntity csvFile) {
+    this.file = csvFile;
+    this.status = BackupStatus.COMPLETED;
+    this.endedAt = Instant.now();
+  }
+
+  public void fail(FileEntity logFile) {
+    this.file = logFile;
+    this.status = BackupStatus.FAILED;
+    this.endedAt = Instant.now();
   }
 }
 // 데이터 백업 관리
 // 데이터 백업한 ID, 작업자(IP주소), 백업을 시작한 시간, 백업이 완료된 시간, 상태, 파일 ID(fileId)
-// ID는 추후에 BaseEntity ?
 // 상태는 enum타입
