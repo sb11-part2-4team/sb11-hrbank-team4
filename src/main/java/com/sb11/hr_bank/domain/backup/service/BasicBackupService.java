@@ -2,6 +2,8 @@ package com.sb11.hr_bank.domain.backup.service;
 
 import com.sb11.hr_bank.domain.backup.dto.BackupResponse;
 import com.sb11.hr_bank.domain.backup.entity.Backup;
+import com.sb11.hr_bank.domain.backup.entity.BackupStatus;
+import com.sb11.hr_bank.domain.backup.mapper.BackupMapper;
 import com.sb11.hr_bank.domain.backup.repository.BackupRepository;
 import com.sb11.hr_bank.domain.employee.repository.EmployeeRepository;
 import com.sb11.hr_bank.domain.file.entity.FileEntity;
@@ -18,6 +20,7 @@ public class BasicBackupService implements BackupService {
   private final BackupRepository backupRepository;
   private final EmployeeRepository employeeRepository;
   private final FileRepository fileRepository;
+  private final BackupMapper backupMapper;
 
 
   @Override
@@ -66,6 +69,11 @@ public class BasicBackupService implements BackupService {
 
   @Override
   public BackupResponse findLatest() {
-    
+    Backup backup = backupRepository.findTopByStatusOrderByEndedAtDesc(BackupStatus.COMPLETED)
+        .orElseThrow(
+            () -> new IllegalArgumentException("완료된 백업이 없습니다.")
+        );
+
+    return BackupResponse.from(backup);
   }
 }
