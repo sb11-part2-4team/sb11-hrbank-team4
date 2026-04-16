@@ -4,16 +4,12 @@ import com.sb11.hr_bank.domain.department.dto.DepartmentRequest;
 import com.sb11.hr_bank.domain.department.dto.DepartmentResponse;
 import com.sb11.hr_bank.domain.department.entity.Department;
 import com.sb11.hr_bank.domain.department.service.DepartmentService;
+import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 @RestController // 이 클래스가 외부 요청을 받는곳
 @RequestMapping("/sb/hrbank/api/departments") // Swagger에 명시된 기본 주소를 설정
@@ -22,57 +18,58 @@ public class DepartmentController {
 
   private final DepartmentService departmentService; // 작업자인 서비스를 불러옴
 
-// 부서등록
-
+  // 부서등록
   @PostMapping // 데이터를 새로 저장할 때 사용
-  public Long createDepartment(@RequestBody DepartmentRequest request) {
+  public ResponseEntity<Long> createDepartment(@RequestBody DepartmentRequest request) {
     // 화면에서 보낸 JSON 데이터를 DTO 바구니에 담아 받음
     // DTO에 담긴 내용을 꺼내 새로운 Entity로 만듬
     Department department = Department.builder()
-        .name(request.name())
-        .description(request.description())
-        .createdDate(request.createdDate())
+        .name(request.departmentName())
+        .description(request.departmentDescription())
+        .createdDate(LocalDate.parse(request.establishmentDate()))
         .build();
 
-    // 완성된 내용을 서비스에게 전달후 DB에 저장
-    return departmentService.save(department);
+    Long savedId = departmentService.save(department);
+    // 201 Created 상태코드와 함께 저장된 ID를 반환
+    return ResponseEntity.status(HttpStatus.CREATED).body(savedId);
   }
 
-// 부서수정
-  @PutMapping("/{id}") // 기존 데이터 수정할때 사용
-  public void updateDepartment(@PathVariable Long id, @RequestBody DepartmentRequest request) {
+  // 부서수정
+  @PutMapping("/{id}")
+  public ResponseEntity<Void> updateDepartment(@PathVariable Long id, @RequestBody DepartmentRequest request) {
     // 수정할 데이터를 DTO에서 가져와서 Entity형태로 전환
     Department updateParam = Department.builder()
-        .name(request.name())
-        .description(request.description())
-        .createdDate(request.createdDate())
+        .name(request.departmentName())
+        .description(request.departmentDescription())
+        .createdDate(LocalDate.parse(request.establishmentDate()))
         .build();
 
-      departmentService.update(id, updateParam);
-      // DepartmentService에 요청, id의 내용을 수정
+    departmentService.update(id, updateParam);
+    // 성공 시 200 OK를 반환
+    return ResponseEntity.ok().build();
   }
 
-// 부서삭제
-
-  @DeleteMapping("/{id}")
-  // 데이터를 삭제할 때 사용
-
-  public void deleteDepartment(@PathVariable Long id) {
+  // 부서삭제
+  @DeleteMapping("/{id}") // 데이터를 삭제할 때 사용
+  public ResponseEntity<Void> deleteDepartment(@PathVariable Long id) {
     departmentService.delete(id);
-
-  // 삭제할 대상의 ID를 요청후 서비스에게 해당 번호의 부서를 삭제하라고 요청
+    // 삭제 성공 시 200 OK를 반환합니다
+    return ResponseEntity.ok().build();
   }
 
+  // 부서 상세 조회
   @GetMapping("/{id}")
-  public DepartmentResponse getDepartmentDetail(@PathVariable Long id) {
-    return departmentService.getDepartmentDetail(id);
+  public ResponseEntity<DepartmentResponse> getDepartmentDetail(@PathVariable Long id) {
+    DepartmentResponse response = departmentService.getDepartmentDetail(id);
+    // 데이터를 담아 200 OK와 함께 전송
+    return ResponseEntity.ok(response);
   }
 
-  // 부서 목록 조회
-
-  @GetMapping // 데이터를 조회시 사용
-  public List<Department> getAllDepartments() {
-    // 서비스에게 모든 부서 목록을 불러오게 요청
-    return departmentService.findAll();
+  // 전체 목록 조회
+  @GetMapping
+  public ResponseEntity<List<Department>> getAllDepartments() {
+    List<Department> departments = departmentService.findAll();
+    // 리스트를 담아 200 OK와 함께 전송
+    return ResponseEntity.ok(departments);
   }
 }
