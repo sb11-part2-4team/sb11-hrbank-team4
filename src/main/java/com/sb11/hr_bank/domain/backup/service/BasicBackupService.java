@@ -78,6 +78,8 @@ public class BasicBackupService implements BackupService {
 
       // 백업 실패(FAILED 상태)
       backup.fail(file);
+
+      throw e;
     }
   }
 
@@ -85,19 +87,19 @@ public class BasicBackupService implements BackupService {
   @Transactional(readOnly = true)
   public List<BackupResponse> findAll() {
     return backupRepository.findAll().stream()
-        .map(backupMapper::from)
+        .map(BackupResponse::from)
         .toList();
   }
 
   @Override
   @Transactional(readOnly = true)
-  public BackupResponse findLatest() {
+  public BackupResponse findLatest(BackupStatus status) {
     Backup backup = backupRepository.findTopByStatusOrderByEndedAtDesc(BackupStatus.COMPLETED)
         .orElseThrow(
             () -> new IllegalArgumentException("완료된 백업이 없습니다.")
         );
 
-//    return BackupResponse.from(backup);
-    return backupMapper.from(backup);
+    return BackupResponse.from(backup);
+//    return backupMapper.from(backup);
   }
 }
