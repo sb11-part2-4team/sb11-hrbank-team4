@@ -7,13 +7,15 @@ import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+
 public interface EmployeeApi {
 
     @Operation(summary = "직원 등록")
     public ResponseEntity<EmployeeDto> create(
             EmployeeCreateRequest dto,
             MultipartFile profile
-    );
+    ) throws IOException;
 
     @Operation(summary = "직원 상세 조회")
     public ResponseEntity<EmployeeDto> findById(
@@ -25,7 +27,7 @@ public interface EmployeeApi {
             Long employeeId,
             EmployeeUpdateRequest dto,
             MultipartFile profile
-    );
+    ) throws IOException;
 
     @Operation(summary = "직원 삭제")
     public ResponseEntity<Void> delete(
