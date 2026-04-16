@@ -5,7 +5,6 @@ import com.sb11.hr_bank.domain.file.entity.FileEntity;
 import com.sb11.hr_bank.domain.file.service.FileService;
 import com.sb11.hr_bank.domain.file.storage.FileStorage;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
@@ -28,7 +27,7 @@ public class FileController {
   //파일 업로드 API
   @PostMapping
   public ResponseEntity<FileResponse> uploadFile(
-      @RequestParam("file") MultipartFile file) throws IOException {
+      @RequestParam("file") MultipartFile file) {
 
     //파일 저장 후 엔티티 반환
     FileEntity fileEntity = fileService.uploadFile(file);

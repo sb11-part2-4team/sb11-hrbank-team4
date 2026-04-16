@@ -23,7 +23,7 @@ public class FileService {
 
   //파일 업로드 클래스 (로컬 디스크 저장 및 DB 기록)
   @Transactional
-  public FileEntity uploadFile(MultipartFile file) throws IOException {
+  public FileEntity uploadFile(MultipartFile file) {
     //빈 파일 검증
     if (file == null || file.isEmpty()) {
       throw new IllegalArgumentException("업로드 된 파일이 없습니다.");
@@ -47,7 +47,13 @@ public class FileService {
 
     //ID를 파일명으로 로컬 디스크에 저장
     Path destPath = rootPath.resolve(savedEntity.getId().toString()).toAbsolutePath();
-    file.transferTo(destPath.toFile());
+
+
+    try {
+      file.transferTo(destPath.toFile());
+    } catch (IOException e) {
+      throw new RuntimeException("로컬 파일 저장에 실패하여 DB 기록을 취소합니다.", e);
+    }
 
     //저장된 파일의 ID 리턴
     return savedEntity;
