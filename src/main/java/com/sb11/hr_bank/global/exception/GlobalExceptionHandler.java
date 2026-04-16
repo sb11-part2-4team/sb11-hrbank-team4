@@ -1,13 +1,54 @@
 package com.sb11.hr_bank.global.exception;
 
 
-import org.springframework.web.bind.annotation.ControllerAdvice;
+import com.sb11.hr_bank.global.dto.ErrorResponse;
+import java.io.IOException;
+import org.springframework.http.ResponseEntity;
 
-@ControllerAdvice
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+@RestControllerAdvice
 public class GlobalExceptionHandler {
 
 
-  public void handleException(Exception e) {
+  //커스텀 예외 핸들러
+  @ExceptionHandler(BusinessException.class)
+  public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException e) {
+
+    ErrorCode errorCode = e.getCode();
+    ErrorResponse errorResponse = new ErrorResponse(errorCode.getStatus(), errorCode.getDetail());
+    return ResponseEntity.status(errorResponse.getStatus()).body(errorResponse);
+  }
+
+
+  @ExceptionHandler(IllegalArgumentException.class)
+  public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException e) {
+    ErrorResponse errorResponse = new ErrorResponse(400,e.getMessage());
+    return ResponseEntity.status(400).body(errorResponse);
+  }
+
+
+  @ExceptionHandler(IOException.class)
+  public ResponseEntity<ErrorResponse> handleIOException(IOException e) {
+    ErrorResponse errorResponse = new ErrorResponse(500,e.getMessage());
+    return ResponseEntity.status(500).body(errorResponse);
+  }
+
+  @ExceptionHandler
+  public ResponseEntity<ErrorResponse> handleRuntimeException(RuntimeException e) {
+
+    ErrorResponse errorResponse = new ErrorResponse(500,e.getMessage());
+    return ResponseEntity.status(500).body(errorResponse);
+  }
+
+
+  @ExceptionHandler(Exception.class)
+  public ResponseEntity<ErrorResponse> handleException(Exception e) {
+
+    ErrorResponse errorResponse = new ErrorResponse(500,e.getMessage());
+    return ResponseEntity.status(500).body(errorResponse);
+
+
 
   }
 
