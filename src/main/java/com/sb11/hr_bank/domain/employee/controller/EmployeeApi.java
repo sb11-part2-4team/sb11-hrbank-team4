@@ -2,12 +2,14 @@ package com.sb11.hr_bank.domain.employee.controller;
 
 import com.sb11.hr_bank.domain.employee.dto.EmployeeCreateRequest;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeDto;
+import com.sb11.hr_bank.domain.employee.dto.EmployeeSearchCondition;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeUpdateRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 
 public interface EmployeeApi {
 
@@ -20,6 +22,11 @@ public interface EmployeeApi {
     @Operation(summary = "직원 상세 조회")
     public ResponseEntity<EmployeeDto> findById(
             Long employeeId
+    );
+
+    @Operation(summary = "직원 목록 조회")
+    public ResponseEntity<List<EmployeeDto>> findAll(
+            EmployeeSearchCondition condition
     );
 
     @Operation(summary = "직원 수정")

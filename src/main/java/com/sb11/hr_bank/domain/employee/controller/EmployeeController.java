@@ -2,6 +2,7 @@ package com.sb11.hr_bank.domain.employee.controller;
 
 import com.sb11.hr_bank.domain.employee.dto.EmployeeCreateRequest;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeDto;
+import com.sb11.hr_bank.domain.employee.dto.EmployeeSearchCondition;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeUpdateRequest;
 import com.sb11.hr_bank.domain.employee.service.EmployeeService;
 import com.sb11.hr_bank.domain.file.entity.FileEntity;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 
 @RestController
 @RequestMapping("api/employees")
@@ -48,6 +50,14 @@ public class EmployeeController implements EmployeeApi {
             @PathVariable Long employeeId
     ) {
         EmployeeDto result = employeeService.findById(employeeId);
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<EmployeeDto>> findAll(
+            EmployeeSearchCondition condition
+    ) {
+        List<EmployeeDto> result = employeeService.findAllByCondition(condition);
         return ResponseEntity.ok(result);
     }
 
