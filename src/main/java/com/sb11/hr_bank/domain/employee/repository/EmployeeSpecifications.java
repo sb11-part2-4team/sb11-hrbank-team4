@@ -1,6 +1,7 @@
 package com.sb11.hr_bank.domain.employee.repository;
 
 import com.sb11.hr_bank.domain.department.entity.Department;
+import com.sb11.hr_bank.domain.employee.dto.EmployeeCountCondition;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeSearchCondition;
 import com.sb11.hr_bank.domain.employee.entity.Employee;
 import jakarta.persistence.criteria.Join;
@@ -8,12 +9,13 @@ import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
 public class EmployeeSpecifications {
 
-    public static Specification<Employee> search(EmployeeSearchCondition condition) {
+    public static Specification<Employee> searchCondition(EmployeeSearchCondition condition) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -64,6 +66,41 @@ public class EmployeeSpecifications {
                 predicates.add(cb.lessThanOrEqualTo(
                         root.get("hireDate"),
                         condition.hireDateTo()
+                ));
+            }
+
+            if(condition.status() != null) {
+                predicates.add(cb.equal(
+                        root.get("employeeStatus"),
+                        condition.status()
+                ));
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+    }
+
+    public static Specification<Employee> countCondition(EmployeeCountCondition condition) {
+        return (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            if(condition == null) {
+                return cb.conjunction();
+            }
+
+            LocalDate toDate = condition.toDate() != null
+                    ? condition.toDate()
+                    : LocalDate.now();
+
+            if(condition.fromDate() != null) {
+                predicates.add(cb.greaterThanOrEqualTo(
+                        root.get("hireDate"),
+                        condition.fromDate()
+                ));
+
+                predicates.add(cb.lessThanOrEqualTo(
+                        root.get("hireDate"),
+                        toDate
                 ));
             }
 

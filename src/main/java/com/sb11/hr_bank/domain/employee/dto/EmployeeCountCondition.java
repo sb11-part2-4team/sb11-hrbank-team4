@@ -5,17 +5,13 @@ import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDate;
 
-public record EmployeeSearchCondition(
-        String nameOrEmail,
-        String employeeNumber,
-        String departmentName,
-        String position,
+public record EmployeeCountCondition(
+        EmployeeStatus status,
 
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-        LocalDate hireDateFrom,
+        LocalDate fromDate,
 
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-        LocalDate hireDateTo,
-        EmployeeStatus status
+        LocalDate toDate
 ) {
 }

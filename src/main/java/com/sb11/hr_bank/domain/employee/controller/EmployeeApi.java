@@ -1,5 +1,6 @@
 package com.sb11.hr_bank.domain.employee.controller;
 
+import com.sb11.hr_bank.domain.employee.dto.EmployeeCountCondition;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeCreateRequest;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeDto;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeSearchCondition;
@@ -27,6 +28,11 @@ public interface EmployeeApi {
     @Operation(summary = "직원 목록 조회")
     public ResponseEntity<List<EmployeeDto>> findAll(
             EmployeeSearchCondition condition
+    );
+
+    @Operation(summary = "직원 수 조회")
+    public ResponseEntity<Long> count(
+            EmployeeCountCondition condition
     );
 
     @Operation(summary = "직원 수정")

@@ -2,6 +2,7 @@ package com.sb11.hr_bank.domain.employee.service;
 
 import com.sb11.hr_bank.domain.department.entity.Department;
 import com.sb11.hr_bank.domain.department.repository.DepartmentRepository;
+import com.sb11.hr_bank.domain.employee.dto.EmployeeCountCondition;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeCreateRequest;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeDto;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeSearchCondition;
@@ -67,9 +68,14 @@ public class EmployeeService {
 
     @Transactional(readOnly = true)
     public List<EmployeeDto> findAllByCondition(EmployeeSearchCondition condition) {
-        return employeeRepository.findAll(EmployeeSpecifications.search(condition)).stream()
+        return employeeRepository.findAll(EmployeeSpecifications.searchCondition(condition)).stream()
                 .map(employeeMapper::toDto)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public Long countByCondition(EmployeeCountCondition condition) {
+        return employeeRepository.count(EmployeeSpecifications.countCondition(condition));
     }
 
     public void update(Long id, EmployeeUpdateRequest dto, FileEntity file) {

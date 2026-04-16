@@ -1,5 +1,6 @@
 package com.sb11.hr_bank.domain.employee.controller;
 
+import com.sb11.hr_bank.domain.employee.dto.EmployeeCountCondition;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeCreateRequest;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeDto;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeSearchCondition;
@@ -13,6 +14,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -55,9 +57,17 @@ public class EmployeeController implements EmployeeApi {
 
     @GetMapping
     public ResponseEntity<List<EmployeeDto>> findAll(
-            EmployeeSearchCondition condition
+            @ModelAttribute EmployeeSearchCondition condition
     ) {
         List<EmployeeDto> result = employeeService.findAllByCondition(condition);
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/count")
+    public ResponseEntity<Long> count(
+            @ModelAttribute EmployeeCountCondition condition
+    ) {
+        Long result = employeeService.countByCondition(condition);
         return ResponseEntity.ok(result);
     }
 
