@@ -15,14 +15,20 @@ import org.springframework.web.util.UriUtils;
 
 @Component
 public class LocalFileStorage implements FileStorage {
+  private final Path rootPath = Paths.get("uploads");
 
   @Override
   public ResponseEntity<Resource> download(FileEntity fileEntity) {
 
     try {
       //저장된 로컬 경로를 찾아 반환
-      Path filePath = Paths.get(fileEntity.getSavedPath());
+      Path filePath = rootPath.resolve(fileEntity.getId().toString());
       Resource resource = new UrlResource(filePath.toUri());
+
+      //파일이 존재하는지, 읽을 수 있는지 확인
+      if (!resource.exists() || !resource.isReadable()) {
+        throw new IllegalArgumentException("파일을 찾을 수 없거나 읽을 수 없습니다.");
+      }
 
       //한글 파일명 깨짐 방지 인코딩
       String encodedFilename = UriUtils.encode(fileEntity.getName(), StandardCharsets.UTF_8);

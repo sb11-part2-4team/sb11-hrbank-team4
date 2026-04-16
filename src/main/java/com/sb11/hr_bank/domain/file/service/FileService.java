@@ -4,9 +4,8 @@ import com.sb11.hr_bank.domain.file.entity.FileEntity;
 import com.sb11.hr_bank.domain.file.repository.FileRepository;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.UUID;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -16,9 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class FileService {
   private final FileRepository fileRepository;
 
-  //파일 저장 경로(./uploads)
-  @Value("${file.upload-dir:./uploads}")
-  private String uploadDir;
+  private final Path rootPath = Paths.get("uploads");
 
   public FileService(FileRepository fileRepository) {
     this.fileRepository = fileRepository;
@@ -33,30 +30,27 @@ public class FileService {
     }
 
     //저장할 폴더가 없을 시 생성
-    File directory = new File(uploadDir);
+    File directory = rootPath.toFile();
     if (!directory.exists()) {
       directory.mkdirs();
     }
 
-    //파일명 중복 방지를 위해 고유한 이름 생성(UUID 활용)
-    String originalFilename = file.getOriginalFilename();
-    String savedFilename = UUID.randomUUID().toString() + "_" + originalFilename;
-    String savedPath = Paths.get(uploadDir, savedFilename).toAbsolutePath().toString();
-
-    //파일을 로컬 디스크에 저장
-    File destFile = new File(savedPath);
-    file.transferTo(destFile);
-
     //DB 메타데이터 저장
     FileEntity fileEntity = new FileEntity(
-        originalFilename,
+        file.getOriginalFilename(),
         file.getContentType(),
-        file.getSize(),
-        savedPath
+        file.getSize()
     );
 
+    //DB에 저장되며 ID 발급
+    FileEntity savedEntity = fileRepository.save(fileEntity);
+
+    //ID를 파일명으로 로컬 디스크에 저장
+    Path destPath = rootPath.resolve(savedEntity.getId().toString()).toAbsolutePath();
+    file.transferTo(destPath.toFile());
+
     //저장된 파일의 ID 리턴
-    return fileRepository.save(fileEntity);
+    return savedEntity;
   }
 
   //파일 메타데이터 단건 조회
