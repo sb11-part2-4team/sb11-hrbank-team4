@@ -1,6 +1,7 @@
 package com.sb11.hr_bank.domain.backup.service;
 
 import com.sb11.hr_bank.domain.backup.dto.BackupResponse;
+import java.util.List;
 
 public interface BackupService {
 
@@ -8,7 +9,7 @@ public interface BackupService {
   void startBackup(String worker);
 
   // 백업 목록 조회
-  BackupResponse findAll();
+  List<BackupResponse> findAll();
 
   // 가장 최신 백업 조회
   BackupResponse findLatest();
