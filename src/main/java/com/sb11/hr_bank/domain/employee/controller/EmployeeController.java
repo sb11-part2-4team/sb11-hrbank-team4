@@ -8,6 +8,7 @@ import com.sb11.hr_bank.domain.employee.dto.EmployeeUpdateRequest;
 import com.sb11.hr_bank.domain.employee.service.EmployeeService;
 import com.sb11.hr_bank.domain.file.entity.FileEntity;
 import com.sb11.hr_bank.domain.file.service.FileService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -36,7 +37,7 @@ public class EmployeeController implements EmployeeApi {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<EmployeeDto> create (
-            @RequestPart("employeeCreateRequest") EmployeeCreateRequest dto,
+            @Valid @RequestPart("employee") EmployeeCreateRequest dto,
             @RequestPart(value = "profile", required = false) MultipartFile profile
     ) throws IOException{
         FileEntity fileEntity = null;
@@ -47,11 +48,11 @@ public class EmployeeController implements EmployeeApi {
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
 
-    @GetMapping(value = "/{employeeId}")
+    @GetMapping(value = "/{id}")
     public ResponseEntity<EmployeeDto> findById(
-            @PathVariable Long employeeId
+            @PathVariable Long id
     ) {
-        EmployeeDto result = employeeService.findById(employeeId);
+        EmployeeDto result = employeeService.findById(id);
         return ResponseEntity.ok(result);
     }
 
@@ -71,25 +72,25 @@ public class EmployeeController implements EmployeeApi {
         return ResponseEntity.ok(result);
     }
 
-    @PatchMapping(value = "/{employeeId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PatchMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> update(
-            @PathVariable Long employeeId,
-            @RequestPart("employee") EmployeeUpdateRequest dto,
+            @PathVariable Long id,
+            @Valid @RequestPart("employee") EmployeeUpdateRequest dto,
             @RequestPart(value = "profile", required = false) MultipartFile profile
     ) throws IOException {
         FileEntity fileEntity = null;
         if(profile != null && !profile.isEmpty()) {
             fileEntity = fileService.uploadFile(profile);
         }
-        employeeService.update(employeeId, dto, fileEntity);
+        employeeService.update(id, dto, fileEntity);
         return ResponseEntity.ok().build();
     }
 
-    @DeleteMapping(value = "/{employeeId}")
+    @DeleteMapping(value = "/{id}")
     public ResponseEntity<Void> delete(
-            @PathVariable Long employeeId
+            @PathVariable Long id
     ) {
-        employeeService.delete(employeeId);
+        employeeService.delete(id);
         return ResponseEntity.noContent().build();
     }
 }

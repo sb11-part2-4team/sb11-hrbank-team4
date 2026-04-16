@@ -22,7 +22,7 @@ public interface EmployeeApi {
 
     @Operation(summary = "직원 상세 조회")
     public ResponseEntity<EmployeeDto> findById(
-            Long employeeId
+            Long id
     );
 
     @Operation(summary = "직원 목록 조회")
@@ -37,14 +37,14 @@ public interface EmployeeApi {
 
     @Operation(summary = "직원 수정")
     public ResponseEntity<Void> update(
-            Long employeeId,
+            Long id,
             EmployeeUpdateRequest dto,
             MultipartFile profile
     ) throws IOException;
 
     @Operation(summary = "직원 삭제")
     public ResponseEntity<Void> delete(
-            Long employeeId
+            Long id
     );
 
 }
