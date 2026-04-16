@@ -1,6 +1,7 @@
 package com.sb11.hr_bank.domain.backup.entity;
 
 import com.sb11.hr_bank.domain.file.entity.FileEntity;
+import com.sb11.hr_bank.global.base.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -15,13 +16,12 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Entity
 @Table(name = "backups")
 @Getter
 @NoArgsConstructor
-public class Backup { // extends BaseEntity {
+public class Backup extends BaseEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY) // auto_increment
@@ -46,7 +46,7 @@ public class Backup { // extends BaseEntity {
   @JoinColumn(name = "file_id", nullable = true)
   private FileEntity file;
 
-  public Backup(String worker) {
+  protected Backup(String worker) {
     this.worker = worker;
     this.startedAt = Instant.now();
     this.status = BackupStatus.IN_PROGRESS;
@@ -63,9 +63,20 @@ public class Backup { // extends BaseEntity {
     this.endedAt = Instant.now();
   }
 
-  public void skip() {
+  private void skip() {
     this.status = BackupStatus.SKIPPED;
     this.endedAt = Instant.now();
+  }
+
+  // 정적 팩토리 메서드
+  public static Backup skip(String worker) {
+    Backup backup = new Backup(worker);
+    backup.skip();
+    return backup;
+  }
+
+  public static Backup create(String worker) {
+    return new Backup(worker);
   }
 }
 // 데이터 백업 관리
