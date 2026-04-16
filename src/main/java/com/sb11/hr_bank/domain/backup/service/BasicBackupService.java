@@ -3,6 +3,7 @@ package com.sb11.hr_bank.domain.backup.service;
 import com.sb11.hr_bank.domain.backup.dto.BackupResponse;
 import com.sb11.hr_bank.domain.backup.entity.Backup;
 import com.sb11.hr_bank.domain.backup.entity.BackupStatus;
+import com.sb11.hr_bank.domain.backup.mapper.BackupMapper;
 import com.sb11.hr_bank.domain.backup.repository.BackupRepository;
 import com.sb11.hr_bank.domain.changelogs.repository.ChangeLogRepository;
 import com.sb11.hr_bank.domain.file.entity.FileEntity;
@@ -23,6 +24,7 @@ public class BasicBackupService implements BackupService {
   private final FileRepository fileRepository;
 
   private final FileService fileService;
+  private final BackupMapper backupMapper;
 
 
   @Override
