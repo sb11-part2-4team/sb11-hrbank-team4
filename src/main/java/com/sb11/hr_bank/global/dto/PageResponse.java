@@ -14,7 +14,7 @@ public record PageResponse<T>(
     boolean hasNext
 ) {
 
-  static <T> PageResponse<T> fromPage(Page<T> page){
+  public static <T> PageResponse<T> fromPage(Page<T> page){
 
     return new PageResponse<>(
 
@@ -29,7 +29,7 @@ public record PageResponse<T>(
 
 
   }
-  static <T> PageResponse<T> fromSlice(Slice<T> slice, String nextCursor, Long nextIdAfter){
+  public static <T> PageResponse<T> fromSlice(Slice<T> slice, String nextCursor, Long nextIdAfter){
 
     return new PageResponse<>(
 
