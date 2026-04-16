@@ -17,7 +17,7 @@ public class Department {
   private Long id;
 
   @Column(nullable = false, unique = true) // 공란불가, 부서명중복불가
-  private String name; // 기존 departmentName을 'name'으로 간결하게 변경
+  private String name; // 기존 departmentName을 'name' 으로 간결하게 변경
 
   @Column(columnDefinition = "TEXT") // 긴 글을 위해 TEXT 지정
   private String description; // 부서에 대한 상세설명

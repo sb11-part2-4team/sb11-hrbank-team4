@@ -24,11 +24,9 @@ public class FileController {
   @PostMapping
   public ResponseEntity<FileResponse> uploadFile(
       @RequestParam("file") MultipartFile file) throws IOException {
-    //파일 저장 후 ID 반환
-    Long fileId = fileService.uploadFile(file);
 
-    //저장된 파일 메타데이터 조회
-    FileEntity fileEntity = fileService.getFileMetadata(fileId);
+    //파일 저장 후 엔티티 반환
+    FileEntity fileEntity = fileService.uploadFile(file);
 
     //응답용 DTO 변환
     FileResponse response = new FileResponse(
@@ -38,7 +36,7 @@ public class FileController {
         fileEntity.getSize()
     );
 
-    //결과 반환
+    //실행 결과 반환
     return ResponseEntity.ok(response);
   }
 }

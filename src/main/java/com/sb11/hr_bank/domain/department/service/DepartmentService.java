@@ -2,6 +2,7 @@ package com.sb11.hr_bank.domain.department.service;
 
 import com.sb11.hr_bank.domain.department.entity.Department;
 import com.sb11.hr_bank.domain.department.repository.DepartmentRepository;
+import com.sb11.hr_bank.domain.employee.repository.EmployeeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +15,7 @@ import java.util.List;
 
 public class DepartmentService {
   private final DepartmentRepository departmentRepository;
+  private final EmployeeRepository employeeRepository;
 
   // 부서 등록 기능 구현
 
@@ -50,10 +52,18 @@ public class DepartmentService {
 
   @Transactional
   public void delete(Long id) {
+    // 삭제할 부서가 현재 존재하는지 확인
+    Department department = departmentRepository.findById(id)
+        .orElseThrow(() -> new IllegalArgumentException("해당 부서가 없습니다. id=" + id));
 
-    departmentRepository.deleteById(id);
+    // 삭제할 부서에 현재 소속 직원이 있는지 확인
+    if (employeeRepository.existsByDepartmentId(id)) {
+      throw new IllegalStateException("해당 부서에 소속된 직원이 있어 삭제할 수 없습니다.");
+    }
+
+    // 삭제할 부서의 현재 소속된 직원이 없을 때만 실제 삭제 실행
+    departmentRepository.delete(department);
   }
-  // 부서 삭제 전, 소속 직원이 있는지 확인하는
 
 
   public List<Department> findAll() {
