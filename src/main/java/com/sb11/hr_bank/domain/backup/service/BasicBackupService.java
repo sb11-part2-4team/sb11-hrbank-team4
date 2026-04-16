@@ -87,10 +87,12 @@ public class BasicBackupService implements BackupService {
         .toList();
   }
 
+  // 가장 최근의 백업을 조회(상태별 조회)
+  // 상태 지정은 Controller에서(기본값 COMPLETED)
   @Override
   @Transactional(readOnly = true)
   public BackupResponse findLatest(BackupStatus status) {
-    Backup backup = backupRepository.findTopByStatusOrderByEndedAtDesc(BackupStatus.COMPLETED)
+    Backup backup = backupRepository.findTopByStatusOrderByEndedAtDesc(status)
         .orElseThrow(
             () -> new IllegalArgumentException("완료된 백업이 없습니다.")
         );

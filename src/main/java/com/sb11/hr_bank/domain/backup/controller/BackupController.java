@@ -33,7 +33,8 @@ public class BackupController {
     return ResponseEntity.ok().build();
   }
 
-  // 가장 최근 백업 조회
+  // 가장 최근 백업 조회(상태별 조회)
+  // 상태 기본값은 COMPLETED
   @GetMapping("/latest")
   public ResponseEntity<BackupResponse> findLatest(
       @RequestParam(name = "status", defaultValue = "COMPLETED") BackupStatus status) {
