@@ -5,7 +5,7 @@ import com.sb11.hr_bank.domain.backup.entity.Backup;
 import com.sb11.hr_bank.domain.backup.entity.BackupStatus;
 import com.sb11.hr_bank.domain.backup.mapper.BackupMapper;
 import com.sb11.hr_bank.domain.backup.repository.BackupRepository;
-import com.sb11.hr_bank.domain.employee.repository.EmployeeRepository;
+import com.sb11.hr_bank.domain.changelogs.repository.ChangeLogRepository;
 import com.sb11.hr_bank.domain.file.entity.FileEntity;
 import com.sb11.hr_bank.domain.file.repository.FileRepository;
 import com.sb11.hr_bank.domain.file.service.FileService;
@@ -20,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class BasicBackupService implements BackupService {
 
   private final BackupRepository backupRepository;
-  private final EmployeeRepository employeeRepository;
+  private final ChangeLogRepository changeLogRepository;
   private final FileRepository fileRepository;
 
   private final FileService fileService;
@@ -37,7 +37,7 @@ public class BasicBackupService implements BackupService {
             .orElse(Instant.MIN);
 
     // 백업이 필요한지 유무를 파악하는 변수, 사원의 변경 유무가 존재하는지
-    boolean needBackup = employeeRepository.existsByUpdatedAtAfter(lastBackupTime);
+    boolean needBackup = changeLogRepository.existsByCreatedAtAfter(lastBackupTime);
 
     // 백업이 필요하지 않을 경우(이미 백업 진행 후에 변경 이력이 없을 경우)
     // 백업 건너뜀(SKIPPED 상태)
