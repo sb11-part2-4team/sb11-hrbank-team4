@@ -22,8 +22,8 @@ public class ChangeDetailLog {
   private ChangeLog changeLog;
 
   // 어떤 항목이 변경되었는지
-  @Column(name = "column_name", nullable = false, length = 50)
-  private String columnName;
+  @Column(name = "property_name", nullable = false, length = 30)
+  private String propertyName;
 
   // 변경 전 데이터
   @Column(name = "before", columnDefinition = "TEXT")
@@ -34,8 +34,8 @@ public class ChangeDetailLog {
   private String after;
 
   @Builder
-  public ChangeDetailLog(String columnName, String before, String after) {
-    this.columnName = columnName;
+  public ChangeDetailLog(String propertyName, String before, String after) {
+    this.propertyName = propertyName;
     this.before = before;
     this.after = after;
 
