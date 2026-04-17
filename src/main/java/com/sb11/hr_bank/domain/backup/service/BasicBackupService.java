@@ -10,7 +10,9 @@ import com.sb11.hr_bank.domain.file.entity.FileEntity;
 import com.sb11.hr_bank.domain.file.repository.FileRepository;
 import com.sb11.hr_bank.domain.file.service.FileService;
 import com.sb11.hr_bank.global.dto.PageResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -27,19 +29,20 @@ public class BasicBackupService implements BackupService {
   private final FileRepository fileRepository;
 
   private final FileService fileService;
+  private final BackupTxService backupTxService;
 
 
   @Override
-  @Transactional
   public void startBackup(String worker) {
-    // 가장 최근 백업 시간을 가져옴(백업이 한번도 진행되지 않았을 때는 Instant.MIN)
-    Instant lastBackupTime =
+    // 가장 최근 백업 시간을 가져옴, 백업이 없을 경우 Optional.empty
+    Optional<Instant> lastBackupTime =
         backupRepository.findTopByStatusOrderByEndedAtDesc(BackupStatus.COMPLETED)
-            .map(Backup::getEndedAt)
-            .orElse(Instant.MIN);
+            .map(Backup::getEndedAt);
 
     // 백업이 필요한지 유무를 파악하는 변수, 사원의 변경 유무가 존재하는지
-    boolean needBackup = changeLogRepository.existsByCreatedAtAfter(lastBackupTime);
+    // lastBackupTime이 없을 경우(첫번째 백업) true를 반환하여 백업 처리 시작
+    boolean needBackup = lastBackupTime.map(
+        changeLogRepository::existsByCreatedAtAfter).orElse(true);
 
     // 백업이 필요하지 않을 경우(이미 백업 진행 후에 변경 이력이 없을 경우)
     // 백업 건너뜀(SKIPPED 상태)
@@ -49,9 +52,8 @@ public class BasicBackupService implements BackupService {
       return;
     }
 
-    // 백업 시작(IN_PROGRESS 상태)
-    Backup backup = Backup.create(worker);
-    backupRepository.save(backup);
+    // 백업 시작(IN_PROGRESS 상태, 트랜잭션)
+    Long backupId = backupTxService.createInProgress(worker);
 
     FileEntity file;
 
@@ -60,26 +62,25 @@ public class BasicBackupService implements BackupService {
       // CSV 파일 생성, CSV 파일을 저장, 성공 상태로 전환
 
       // CSV 파일로 백업 데이터를 생성
-      file = fileService.createCsvBackup();
+      String csv = "";
+      byte[] csvData = csv.getBytes(StandardCharsets.UTF_8);
 
-      // CSV 파일을 저장(fileService에서 해당 메서드를 사용했다면 제거할 예정입니다)
-      fileRepository.save(file);
+      file = fileService.saveInternalData("backup_data.csv", "text/csv", csvData);
 
       // 백업 완료(COMPLETED 상태)
-      backup.complete(file);
+      backupTxService.complete(backupId, file);
 
     } catch (Exception e) {
       // 백업 실패(FAILED) 상태
       // log 파일 생성, log 파일을 저장, 실패 상태로 전환
+      String log = "Error : " + e.getMessage();
+      byte[] logData = log.getBytes(StandardCharsets.UTF_8);
 
       // log 파일로 에러 로그 생성
-      file = fileService.createLogBackup();
-
-      // log 파일을 저장(fileService에서 해당 메서드를 사용했다면 제거할 예정입니다)
-      fileRepository.save(file);
+      file = fileService.saveInternalData("backup_error.log", "text/plain", logData);
 
       // 백업 실패(FAILED 상태)
-      backup.fail(file);
+      backupTxService.fail(backupId, file);
     }
   }
 
@@ -89,19 +90,12 @@ public class BasicBackupService implements BackupService {
   public PageResponse<BackupResponse> findAll(BackupSearchCondition condition) {
     Pageable pageable = PageRequest.of(0, 10);
 
-    Slice<Backup> slice = backupRepository.search(
-        condition.worker(), condition.startFrom(),
-        condition.startTo(), condition.status(),
-        condition.cursor(), condition.sortBy(),
-        pageable);
+    Slice<Backup> slice = backupRepository.search(condition, pageable);
 
     Long nextIdAfter = slice.hasNext() ?
         slice.getContent().get(slice.getNumberOfElements() - 1).getId() : null;
 
     return PageResponse.fromSlice(slice.map(BackupResponse::from), null, nextIdAfter);
-//    return backupRepository.findAll().stream()
-//        .map(BackupResponse::from)
-//        .toList();
   }
 
   // 가장 최근의 백업을 조회(상태별 조회)
