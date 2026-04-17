@@ -73,6 +73,7 @@ public class FileService {
     return savedEntity;
   }
 
+  //파일 저장 공용 메서드
   private FileEntity saveMetadata(String name, String contentType, Long size) {
     //저장할 폴더가 없을 시 생성
     File directory = rootPath.toFile();
@@ -89,5 +90,24 @@ public class FileService {
 
   private Path getAbsolutePath(Long id) {
     return rootPath.resolve(id.toString()).toAbsolutePath();
+  }
+
+  //파일 삭제 메서드
+  @Transactional
+  public void deleteFile(Long id) {
+    //DB 메타데이터 조회
+    FileEntity fileEntity = getFileMetadata(id);
+
+    //로컬 디스크 파일 삭제
+    Path destPath = getAbsolutePath(fileEntity.getId());
+
+    try {
+      Files.deleteIfExists(destPath);
+    } catch (IOException e) {
+      throw new BusinessException(ErrorCode.FILE_STORAGE_ERROR);
+    }
+
+    //DB 메타데이터 삭제
+    fileRepository.delete(fileEntity);
   }
 }
