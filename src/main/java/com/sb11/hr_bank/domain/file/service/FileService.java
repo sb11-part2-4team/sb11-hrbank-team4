@@ -39,7 +39,7 @@ public class FileService {
 
     try {
       file.transferTo(destPath.toFile());
-    } catch (IOException e) {
+    } catch (IOException | IllegalStateException e) {
       throw new BusinessException(ErrorCode.FILE_STORAGE_ERROR);
     }
 
@@ -57,9 +57,13 @@ public class FileService {
   //서버 내부 파일 저장용 메서드
   @Transactional
   public FileEntity saveInternalData(String originalFilename, String contentType, byte[] data) {
+    //data 검증
+    if (data == null || data.length == 0) {
+      throw new BusinessException(ErrorCode.FILE_EMPTY);
+    }
 
     FileEntity savedEntity = saveMetadata(originalFilename, contentType, (long) data.length);
-    // ID를 파일명으로 로컬 디스크에 기록
+    //ID를 파일명으로 로컬 디스크에 기록
     Path destPath = getAbsolutePath(savedEntity.getId());
     try {
       Files.write(destPath, data);
