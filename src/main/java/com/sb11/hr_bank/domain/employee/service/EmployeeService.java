@@ -2,18 +2,22 @@ package com.sb11.hr_bank.domain.employee.service;
 
 import com.sb11.hr_bank.domain.department.entity.Department;
 import com.sb11.hr_bank.domain.department.repository.DepartmentRepository;
-import com.sb11.hr_bank.domain.employee.dto.EmployeeUpdateRequest;
-import com.sb11.hr_bank.domain.employee.mapper.EmployeeMapper;
-import com.sb11.hr_bank.domain.employee.repository.EmployeeRepository;
+import com.sb11.hr_bank.domain.employee.dto.EmployeeCountCondition;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeCreateRequest;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeDto;
+import com.sb11.hr_bank.domain.employee.dto.EmployeeSearchCondition;
+import com.sb11.hr_bank.domain.employee.dto.EmployeeUpdateRequest;
 import com.sb11.hr_bank.domain.employee.entity.Employee;
-import com.sb11.hr_bank.domain.fileentity.entity.FileEntity;
+import com.sb11.hr_bank.domain.employee.mapper.EmployeeMapper;
+import com.sb11.hr_bank.domain.employee.repository.EmployeeRepository;
+import com.sb11.hr_bank.domain.employee.repository.EmployeeSpecifications;
+import com.sb11.hr_bank.domain.file.entity.FileEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -62,15 +66,26 @@ public class EmployeeService {
         return employeeMapper.toDto(employee);
     }
 
-//    public List<EmployeeDto> findAllByCondition(); 추가 예정
+    @Transactional(readOnly = true)
+    public List<EmployeeDto> findAllByCondition(EmployeeSearchCondition condition) {
+        return employeeRepository.findAll(EmployeeSpecifications.searchCondition(condition)).stream()
+                .map(employeeMapper::toDto)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public Long countByCondition(EmployeeCountCondition condition) {
+        return employeeRepository.count(EmployeeSpecifications.countCondition(condition));
+    }
 
     public void update(Long id, EmployeeUpdateRequest dto, FileEntity file) {
-        if(employeeRepository.findByEmail(dto.email()).isPresent()) {
-            throw new RuntimeException("Duplicate email");
-        }
-        
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
+
+        if(!employee.getEmail().equals(dto.email())
+                && employeeRepository.findByEmail(dto.email()).isPresent()) {
+            throw new RuntimeException("Duplicate email");
+        }
 
         Department department = departmentRepository.findById(dto.departmentId())
                 .orElseThrow(() -> new RuntimeException("Department not found"));
