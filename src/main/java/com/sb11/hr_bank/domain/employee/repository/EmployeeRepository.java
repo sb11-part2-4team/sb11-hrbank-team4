@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 public interface EmployeeRepository
@@ -13,5 +14,7 @@ public interface EmployeeRepository
         EmployeeRepositoryCustom {
     Optional<Employee> findByEmail(String email);
     Long countByHireDateBetween(LocalDate start, LocalDate end);
+    Long countByHireDateLessThan(LocalDate date);
     boolean existsByDepartmentId(Long departmentId);
+    List<Employee> findByDepartmentId(Long departmentId);
 }

@@ -9,6 +9,8 @@ import com.sb11.hr_bank.domain.employee.dto.EmployeeDistributionDto;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeDistributionRow;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeDto;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeSearchCondition;
+import com.sb11.hr_bank.domain.employee.dto.EmployeeTrendCondition;
+import com.sb11.hr_bank.domain.employee.dto.EmployeeTrendDto;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeUpdateRequest;
 import com.sb11.hr_bank.domain.employee.entity.Employee;
 import com.sb11.hr_bank.domain.employee.entity.EmployeeStatus;
@@ -23,6 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -105,9 +108,72 @@ public class EmployeeService {
                 .map(row -> new EmployeeDistributionDto(
                         row.groupKey(),
                         row.count(),
-                        total == 0 ? 0.0 : Math.round(row.count() * 1000.0 / total) / 10.0
+                        calculateRate(row.count(), total)
                 ))
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<EmployeeTrendDto> getTrend(EmployeeTrendCondition condition) {
+        String unit = condition != null && condition.unit() != null && !condition.unit().isBlank()
+                ? condition.unit()
+                : "month";
+
+        if(!List.of("day", "week", "month", "quarter", "year").contains(unit)) {
+            throw new IllegalArgumentException("unit은 day, week, month, quarter, year만 가능합니다.");
+        }
+
+        LocalDate to = condition != null && condition.to() != null
+                ? condition.to()
+                : LocalDate.now();
+
+        LocalDate from = condition != null && condition.from() != null
+                ? condition.from()
+                : switch (unit) {
+                    case "day" -> to.minusDays(11);
+                    case "week" -> to.minusWeeks(11);
+                    case "month" -> to.minusMonths(11);
+                    case "quarter" -> to.minusMonths(33);
+                    case "year" -> to.minusYears(11);
+                    default -> throw new IllegalArgumentException("unit은 day, week, month, quarter, year만 가능합니다.");
+                };
+
+        if(from.isAfter(to)) {
+            throw new IllegalArgumentException("from은 to보다 이후일 수 없습니다.");
+        }
+
+        List<LocalDate> buckets = new ArrayList<>();
+        LocalDate current = from;
+
+        while(!current.isAfter(to)) {
+            buckets.add(current);
+            current = nextDate(current, unit);
+        }
+
+        List<EmployeeTrendDto> result = new ArrayList<>();
+        long previousCount = employeeRepository.countByHireDateLessThan(from);
+        long count = previousCount;
+
+        for(LocalDate bucket : buckets) {
+            LocalDate bucketEnd = nextDate(bucket, unit).minusDays(1);
+            if(bucketEnd.isAfter(to)) {
+                bucketEnd = to;
+            }
+
+            long change = employeeRepository.countByHireDateBetween(bucket, bucketEnd);
+            count += change;
+
+            result.add(new EmployeeTrendDto(
+                    bucket.toString(),
+                    count,
+                    change,
+                    calculateRate(change, previousCount)
+            ));
+
+            previousCount = count;
+        }
+
+        return result;
     }
 
     public void update(Long id, EmployeeUpdateRequest dto, FileEntity file) {
@@ -139,7 +205,7 @@ public class EmployeeService {
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.EMPLOYEE_NOT_FOUND));
 
-        employeeRepository.deleteById(id);
+        employeeRepository.delete(employee);
     }
 
     private EmployeeCountCondition normalizeCountCondition(EmployeeCountCondition condition) {
@@ -152,5 +218,24 @@ public class EmployeeService {
                 condition.fromDate(),
                 LocalDate.now()
         );
+    }
+
+    private double calculateRate(long value, long total) {
+        if(total == 0) {
+            return 0.0;
+        }
+
+        return Math.round(value * 1000.0 / total) / 10.0;
+    }
+
+    private LocalDate nextDate(LocalDate date, String unit) {
+        return switch (unit) {
+            case "day" -> date.plusDays(1);
+            case "week" -> date.plusWeeks(1);
+            case "month" -> date.plusMonths(1);
+            case "quarter" -> date.plusMonths(3);
+            case "year" -> date.plusYears(1);
+            default -> throw new IllegalArgumentException("unit은 day, week, month, quarter, year만 가능합니다.");
+        };
     }
 }

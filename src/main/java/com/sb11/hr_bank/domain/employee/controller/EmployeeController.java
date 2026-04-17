@@ -6,6 +6,8 @@ import com.sb11.hr_bank.domain.employee.dto.EmployeeDistributionCondition;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeDistributionDto;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeDto;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeSearchCondition;
+import com.sb11.hr_bank.domain.employee.dto.EmployeeTrendCondition;
+import com.sb11.hr_bank.domain.employee.dto.EmployeeTrendDto;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeUpdateRequest;
 import com.sb11.hr_bank.domain.employee.service.EmployeeService;
 import com.sb11.hr_bank.domain.file.entity.FileEntity;
@@ -78,6 +80,14 @@ public class EmployeeController implements EmployeeApi {
             @ModelAttribute EmployeeDistributionCondition condition
     ) {
         List<EmployeeDistributionDto> result = employeeService.getDistribution(condition);
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/stats/trend")
+    public ResponseEntity<List<EmployeeTrendDto>> getTrend(
+            @ModelAttribute EmployeeTrendCondition condition
+    ) {
+        List<EmployeeTrendDto> result = employeeService.getTrend(condition);
         return ResponseEntity.ok(result);
     }
 
