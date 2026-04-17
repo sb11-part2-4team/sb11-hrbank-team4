@@ -4,6 +4,7 @@ import com.sb11.hr_bank.domain.file.entity.FileEntity;
 import com.sb11.hr_bank.domain.file.repository.FileRepository;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import org.springframework.stereotype.Service;
@@ -29,25 +30,10 @@ public class FileService {
       throw new IllegalArgumentException("업로드 된 파일이 없습니다.");
     }
 
-    //저장할 폴더가 없을 시 생성
-    File directory = rootPath.toFile();
-    if (!directory.exists()) {
-      directory.mkdirs();
-    }
-
-    //DB 메타데이터 저장
-    FileEntity fileEntity = new FileEntity(
-        file.getOriginalFilename(),
-        file.getContentType(),
-        file.getSize()
-    );
-
-    //DB에 저장되며 ID 발급
-    FileEntity savedEntity = fileRepository.save(fileEntity);
+    FileEntity savedEntity = saveMetadata(file.getOriginalFilename(), file.getContentType(), file.getSize());
 
     //ID를 파일명으로 로컬 디스크에 저장
-    Path destPath = rootPath.resolve(savedEntity.getId().toString()).toAbsolutePath();
-
+    Path destPath = getAbsolutePath(savedEntity.getId());
 
     try {
       file.transferTo(destPath.toFile());
@@ -64,5 +50,38 @@ public class FileService {
     return fileRepository.findById(id)
         .orElseThrow(() -> new IllegalArgumentException(
             "해당 ID의 파일을 찾을 수 없습니다.: " + id));
+  }
+
+  //서버 내부 파일 저장용 메서드
+  @Transactional
+  public FileEntity saveInternalData(String originalFilename, String contentType, byte[] data) {
+
+    FileEntity savedEntity = saveMetadata(originalFilename, contentType, (long) data.length);
+    // ID를 파일명으로 로컬 디스크에 기록
+    Path destPath = getAbsolutePath(savedEntity.getId());
+    try {
+      Files.write(destPath, data);
+    } catch (IOException e) {
+      throw new RuntimeException("내부 파일 로컬 저장에 실패하여 롤백합니다.", e);
+    }
+    return savedEntity;
+  }
+
+  private FileEntity saveMetadata(String name, String contentType, Long size) {
+    //저장할 폴더가 없을 시 생성
+    File directory = rootPath.toFile();
+    if (!directory.exists()) {
+      directory.mkdirs();
+    }
+
+    //DB 메타데이터 저장
+    FileEntity fileEntity = new FileEntity(name, contentType, size);
+
+    //DB에 저장되며 ID 발급
+    return fileRepository.save(fileEntity);
+  }
+
+  private Path getAbsolutePath(Long id) {
+    return rootPath.resolve(id.toString()).toAbsolutePath();
   }
 }
