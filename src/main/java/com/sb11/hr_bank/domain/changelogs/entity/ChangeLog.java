@@ -1,6 +1,7 @@
 package com.sb11.hr_bank.domain.changelogs.entity;
 
 import com.sb11.hr_bank.employee.Employee;
+import com.sb11.hr_bank.global.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -18,15 +19,11 @@ import java.util.List;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
-public class ChangeLog {
+public class ChangeLog extends BaseEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
-
-  @CreatedDate
-  @Column(name = "created_at", nullable = false, updatable = false)
-  private LocalDateTime createdAt;
 
   // Employee Entity 연결
   @ManyToOne(fetch = FetchType.LAZY)
