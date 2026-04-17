@@ -41,7 +41,7 @@ public class ChangeLogRequestDto {
 
     // 이전 페이지 마지막 요소 ID (커서)
     private Long lastId;
-    // ipAddreee or createdAt (기본값)
+    // ipAddress or createdAt (기본값)
     private String sortBy;
     private Integer size = 10;
   }
