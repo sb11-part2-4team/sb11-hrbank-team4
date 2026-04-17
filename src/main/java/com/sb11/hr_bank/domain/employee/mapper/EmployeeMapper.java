@@ -3,7 +3,7 @@ package com.sb11.hr_bank.domain.employee.mapper;
 import com.sb11.hr_bank.domain.department.entity.Department;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeDto;
 import com.sb11.hr_bank.domain.employee.entity.Employee;
-import com.sb11.hr_bank.domain.fileentity.entity.FileEntity;
+import com.sb11.hr_bank.domain.file.entity.FileEntity;
 import org.springframework.stereotype.Component;
 
 @Component

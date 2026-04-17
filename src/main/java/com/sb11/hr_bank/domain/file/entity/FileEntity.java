@@ -30,17 +30,13 @@ public class FileEntity {
   @Column(nullable = false)
   private Long size;
 
-  @Column(nullable = false, length = 500)
-  private String savedPath;
-
   @Column(nullable = false, updatable = false)
   private Instant createdAt;
 
-  public FileEntity(String name, String contentType, Long size, String savedPath) {
+  public FileEntity(String name, String contentType, Long size) {
     this.name = name;
     this.contentType = contentType;
     this.size = size;
-    this.savedPath = savedPath;
     this.createdAt = Instant.now();
   }
 }

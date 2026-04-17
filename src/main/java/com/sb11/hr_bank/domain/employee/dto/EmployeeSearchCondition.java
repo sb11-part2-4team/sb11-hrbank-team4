@@ -1,0 +1,21 @@
+package com.sb11.hr_bank.domain.employee.dto;
+
+import com.sb11.hr_bank.domain.employee.entity.EmployeeStatus;
+import org.springframework.format.annotation.DateTimeFormat;
+
+import java.time.LocalDate;
+
+public record EmployeeSearchCondition(
+        String nameOrEmail,
+        String employeeNumber,
+        String departmentName,
+        String position,
+
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+        LocalDate hireDateFrom,
+
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+        LocalDate hireDateTo,
+        EmployeeStatus status
+) {
+}

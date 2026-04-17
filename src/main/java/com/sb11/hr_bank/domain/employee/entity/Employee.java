@@ -1,7 +1,8 @@
 package com.sb11.hr_bank.domain.employee.entity;
 
 import com.sb11.hr_bank.domain.department.entity.Department;
-import com.sb11.hr_bank.domain.fileentity.entity.FileEntity;
+import com.sb11.hr_bank.domain.file.entity.FileEntity;
+import com.sb11.hr_bank.global.base.BaseUpdatableEntity;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -24,7 +25,7 @@ import java.time.LocalDate;
 @Entity
 @Table(name = "employees")
 @NoArgsConstructor
-public class Employee { // extends BaseEntity
+public class Employee extends BaseUpdatableEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
