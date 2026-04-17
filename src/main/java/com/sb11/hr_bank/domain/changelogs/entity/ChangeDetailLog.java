@@ -1,16 +1,16 @@
 package com.sb11.hr_bank.domain.changelogs.entity;
 
+import com.sb11.hr_bank.global.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
+
 
 @Entity
 @Table(name = "change_detail_logs")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class ChangeDetailLog {
+public class ChangeDetailLog extends BaseEntity{
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

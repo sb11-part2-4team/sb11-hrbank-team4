@@ -25,7 +25,7 @@ public class ChangeLogResponseDto {
   // 상세 조회용 DTO
   @Getter
   @Builder
-  public static class DetailItem {
+  public static class DetailInfo {
 
     private Long id;
     private List<DetailItem> details;
