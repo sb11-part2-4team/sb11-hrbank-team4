@@ -8,7 +8,9 @@ import java.time.LocalDate;
 import java.util.Optional;
 
 public interface EmployeeRepository
-        extends JpaRepository<Employee, Long>, JpaSpecificationExecutor<Employee> {
+        extends JpaRepository<Employee, Long>,
+        JpaSpecificationExecutor<Employee>,
+        EmployeeRepositoryCustom {
     Optional<Employee> findByEmail(String email);
     Long countByHireDateBetween(LocalDate start, LocalDate end);
     boolean existsByDepartmentId(Long departmentId);

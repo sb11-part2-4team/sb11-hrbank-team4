@@ -4,6 +4,8 @@ import com.sb11.hr_bank.domain.department.entity.Department;
 import com.sb11.hr_bank.domain.department.repository.DepartmentRepository;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeCountCondition;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeCreateRequest;
+import com.sb11.hr_bank.domain.employee.dto.EmployeeDistributionCondition;
+import com.sb11.hr_bank.domain.employee.dto.EmployeeDistributionDto;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeDto;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeSearchCondition;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeUpdateRequest;
@@ -78,6 +80,11 @@ public class EmployeeService {
     @Transactional(readOnly = true)
     public Long countByCondition(EmployeeCountCondition condition) {
         return employeeRepository.count(EmployeeSpecifications.countCondition(condition));
+    }
+
+    @Transactional(readOnly = true)
+    public List<EmployeeDistributionDto> getDistribution(EmployeeDistributionCondition condition) {
+        return employeeRepository.findDistribution(condition);
     }
 
     public void update(Long id, EmployeeUpdateRequest dto, FileEntity file) {
