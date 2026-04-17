@@ -94,7 +94,7 @@ public class BasicBackupService implements BackupService {
   public BackupResponse findLatest(BackupStatus status) {
     Backup backup = backupRepository.findTopByStatusOrderByEndedAtDesc(status)
         .orElseThrow(
-            () -> new IllegalArgumentException("완료된 백업이 없습니다.")
+            () -> new IllegalArgumentException(status.getDescription() + " 상태의 백업이 없습니다.")
         );
 
     return BackupResponse.from(backup);
