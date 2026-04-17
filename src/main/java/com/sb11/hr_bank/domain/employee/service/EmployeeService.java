@@ -12,6 +12,8 @@ import com.sb11.hr_bank.domain.employee.mapper.EmployeeMapper;
 import com.sb11.hr_bank.domain.employee.repository.EmployeeRepository;
 import com.sb11.hr_bank.domain.employee.repository.EmployeeSpecifications;
 import com.sb11.hr_bank.domain.file.entity.FileEntity;
+import com.sb11.hr_bank.global.exception.BusinessException;
+import com.sb11.hr_bank.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,11 +32,11 @@ public class EmployeeService {
 
     public EmployeeDto create(EmployeeCreateRequest dto, FileEntity file) {
         if(employeeRepository.findByEmail(dto.email()).isPresent()) {
-            throw new RuntimeException("Duplicate email");
+            throw new BusinessException(ErrorCode.EMPLOYEE_DUPLICATE_EMAIL);
         }
 
         Department department = departmentRepository.findById(dto.departmentId())
-                .orElseThrow(() -> new RuntimeException("Department not found"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.EMPLOYEE_DEPARTMENT_NOT_FOUND));
 
         LocalDate hireDate = dto.hireDate();
         long count = employeeRepository.countByHireDateBetween(
@@ -61,7 +63,7 @@ public class EmployeeService {
     @Transactional(readOnly = true)
     public EmployeeDto findById(Long id) {
         Employee employee = employeeRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Employee not found"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.EMPLOYEE_NOT_FOUND));
 
         return employeeMapper.toDto(employee);
     }
@@ -80,15 +82,15 @@ public class EmployeeService {
 
     public void update(Long id, EmployeeUpdateRequest dto, FileEntity file) {
         Employee employee = employeeRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Employee not found"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.EMPLOYEE_NOT_FOUND));
 
         if(!employee.getEmail().equals(dto.email())
                 && employeeRepository.findByEmail(dto.email()).isPresent()) {
-            throw new RuntimeException("Duplicate email");
+            throw new BusinessException(ErrorCode.EMPLOYEE_DUPLICATE_EMAIL);
         }
 
         Department department = departmentRepository.findById(dto.departmentId())
-                .orElseThrow(() -> new RuntimeException("Department not found"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.EMPLOYEE_DEPARTMENT_NOT_FOUND));
 
         FileEntity fileEntity = file != null ? file : employee.getProfileImage();
 
@@ -105,7 +107,7 @@ public class EmployeeService {
 
     public void delete(Long id) {
         Employee employee = employeeRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Employee not found"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.EMPLOYEE_NOT_FOUND));
 
         employeeRepository.deleteById(id);
     }

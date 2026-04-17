@@ -19,7 +19,9 @@ public enum ErrorCode {
   GLOBAL_DUMMY_ERROR(500, "G001", "예시 메시지"),
 
   // employee
-  //EXAMPLE_EMPLOYEE_ERROR(500, "E001", "예시 메시지"),
+  EMPLOYEE_NOT_FOUND(404, "E001", "직원을 찾을 수 없습니다."),
+  EMPLOYEE_DUPLICATE_EMAIL(409, "E002", "이미 사용 중인 이메일입니다."),
+  EMPLOYEE_DEPARTMENT_NOT_FOUND(404, "E003", "부서를 찾을 수 없습니다."),
 
   // department
   //EXAMPLE_DEPARTMENT_ERROR(500, "D001", "예시 메시지"),
