@@ -67,13 +67,25 @@ public class Backup extends BaseEntity {
     return new Backup(worker, BackupStatus.IN_PROGRESS);
   }
 
+  // IN_PROGRESS(진행중) 상태-> COMPLETED 상태로
   public void complete(FileEntity csvFile) {
+    // IN_PROGRESS 상태가 아니면 예외
+    if (this.status != BackupStatus.IN_PROGRESS) {
+      throw new IllegalStateException("진행 중인 백업만 완료 처리할 수 있습니다.");
+    }
+    if (csvFile == null) {
+      throw new IllegalArgumentException("백업을 완료하였지만 csvFile이 생성되지 않았습니다.");
+    }
     this.file = csvFile;
     this.status = BackupStatus.COMPLETED;
     this.endedAt = Instant.now();
   }
 
+  // IN_PROGRESS(진행중) 상태-> FAILED 상태로
   public void fail(FileEntity logFile) {
+    if (this.status != BackupStatus.IN_PROGRESS) {
+      throw new IllegalStateException("진행 중인 백업만 실패 처리할 수 있습니다.");
+    }
     this.file = logFile;
     this.status = BackupStatus.FAILED;
     this.endedAt = Instant.now();
