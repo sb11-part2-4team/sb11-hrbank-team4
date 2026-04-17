@@ -1,13 +1,15 @@
 package com.sb11.hr_bank.domain.backup.controller;
 
 import com.sb11.hr_bank.domain.backup.dto.BackupResponse;
+import com.sb11.hr_bank.domain.backup.dto.BackupSearchCondition;
 import com.sb11.hr_bank.domain.backup.entity.BackupStatus;
 import com.sb11.hr_bank.domain.backup.service.BackupService;
+import com.sb11.hr_bank.global.dto.PageResponse;
 import jakarta.servlet.http.HttpServletRequest;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -22,8 +24,11 @@ public class BackupController {
 
   // 데이터 백업 목록 조회
   @GetMapping
-  public ResponseEntity<List<BackupResponse>> findAll() {
-    return ResponseEntity.ok(backupService.findAll());
+  public ResponseEntity<PageResponse<BackupResponse>> findAll(
+      @ModelAttribute BackupSearchCondition condition
+  ) {
+    return ResponseEntity.ok(
+        backupService.findAll(condition));
   }
 
   // 데이터 백업 생성
