@@ -1,5 +1,6 @@
 package com.sb11.hr_bank.domain.file.entity;
 
+import com.sb11.hr_bank.global.base.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -15,7 +16,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "files")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class FileEntity {
+public class FileEntity extends BaseEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,13 +31,9 @@ public class FileEntity {
   @Column(nullable = false)
   private Long size;
 
-  @Column(nullable = false, updatable = false)
-  private Instant createdAt;
-
   public FileEntity(String name, String contentType, Long size) {
     this.name = name;
     this.contentType = contentType;
     this.size = size;
-    this.createdAt = Instant.now();
   }
 }

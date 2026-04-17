@@ -1,6 +1,8 @@
 package com.sb11.hr_bank.domain.file.storage;
 
 import com.sb11.hr_bank.domain.file.entity.FileEntity;
+import com.sb11.hr_bank.global.exception.BusinessException;
+import com.sb11.hr_bank.global.exception.ErrorCode;
 import java.net.MalformedURLException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -27,7 +29,7 @@ public class LocalFileStorage implements FileStorage {
 
       //파일이 존재하는지, 읽을 수 있는지 확인
       if (!resource.exists() || !resource.isReadable()) {
-        throw new IllegalArgumentException("파일을 찾을 수 없거나 읽을 수 없습니다.");
+        throw new BusinessException(ErrorCode.FILE_NOT_FOUND);
       }
 
       //한글 파일명 깨짐 방지 인코딩

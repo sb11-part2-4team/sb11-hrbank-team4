@@ -16,3 +16,6 @@ spring:
         format_sql: true
         highlight_sql: true
     open-in-view: false
+
+backup:
+  interval-ms: 3600000
