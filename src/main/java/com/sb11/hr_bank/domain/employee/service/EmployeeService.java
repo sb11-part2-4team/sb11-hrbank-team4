@@ -6,10 +6,12 @@ import com.sb11.hr_bank.domain.employee.dto.EmployeeCountCondition;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeCreateRequest;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeDistributionCondition;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeDistributionDto;
+import com.sb11.hr_bank.domain.employee.dto.EmployeeDistributionRow;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeDto;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeSearchCondition;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeUpdateRequest;
 import com.sb11.hr_bank.domain.employee.entity.Employee;
+import com.sb11.hr_bank.domain.employee.entity.EmployeeStatus;
 import com.sb11.hr_bank.domain.employee.mapper.EmployeeMapper;
 import com.sb11.hr_bank.domain.employee.repository.EmployeeRepository;
 import com.sb11.hr_bank.domain.employee.repository.EmployeeSpecifications;
@@ -79,12 +81,33 @@ public class EmployeeService {
 
     @Transactional(readOnly = true)
     public Long countByCondition(EmployeeCountCondition condition) {
-        return employeeRepository.count(EmployeeSpecifications.countCondition(condition));
+        EmployeeCountCondition normalizedCondition = normalizeCountCondition(condition);
+        return employeeRepository.count(EmployeeSpecifications.countCondition(normalizedCondition));
     }
 
     @Transactional(readOnly = true)
     public List<EmployeeDistributionDto> getDistribution(EmployeeDistributionCondition condition) {
-        return employeeRepository.findDistribution(condition);
+        String groupBy = condition != null && condition.groupBy() != null && !condition.groupBy().isBlank()
+                ? condition.groupBy()
+                : "department";
+
+        EmployeeStatus status = condition != null && condition.status() != null
+                ? condition.status()
+                : EmployeeStatus.ACTIVE;
+
+        List<EmployeeDistributionRow> rows = employeeRepository.findDistribution(groupBy, status);
+
+        long total = rows.stream()
+                .mapToLong(EmployeeDistributionRow::count)
+                .sum();
+
+        return rows.stream()
+                .map(row -> new EmployeeDistributionDto(
+                        row.groupKey(),
+                        row.count(),
+                        total == 0 ? 0.0 : Math.round(row.count() * 1000.0 / total) / 10.0
+                ))
+                .toList();
     }
 
     public void update(Long id, EmployeeUpdateRequest dto, FileEntity file) {
@@ -117,5 +140,17 @@ public class EmployeeService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.EMPLOYEE_NOT_FOUND));
 
         employeeRepository.deleteById(id);
+    }
+
+    private EmployeeCountCondition normalizeCountCondition(EmployeeCountCondition condition) {
+        if(condition == null || condition.fromDate() == null || condition.toDate() != null) {
+            return condition;
+        }
+
+        return new EmployeeCountCondition(
+                condition.status(),
+                condition.fromDate(),
+                LocalDate.now()
+        );
     }
 }
