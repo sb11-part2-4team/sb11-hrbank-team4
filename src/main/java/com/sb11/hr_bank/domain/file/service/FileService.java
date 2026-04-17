@@ -9,10 +9,14 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
+@Slf4j //로그 사용을 위한 어노테이션
 @Service
 @Transactional(readOnly = true)
 public class FileService {
@@ -101,13 +105,21 @@ public class FileService {
     //로컬 디스크 파일 삭제
     Path destPath = getAbsolutePath(fileEntity.getId());
 
-    try {
-      Files.deleteIfExists(destPath);
-    } catch (IOException e) {
-      throw new BusinessException(ErrorCode.FILE_STORAGE_ERROR);
-    }
-
     //DB 메타데이터 삭제
     fileRepository.delete(fileEntity);
+
+    //DB 트랙잭션이 커밋된 이후 로컬 파일 삭제
+    TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+      @Override
+      public void afterCommit() {
+        try {
+          Files.deleteIfExists(destPath);
+          log.info("로컬 파일 삭제 성공: {}", destPath);
+        } catch (IOException e) {
+          //DB 커밋이 끝났으므로 롤백 불가, 에러 로그 남김
+          log.error("로컬 파일 삭제 실패: {}", destPath, e);
+        }
+      }
+    });
   }
 }

@@ -55,12 +55,4 @@ public class FileController {
 
     return fileStorage.download(fileEntity);
   }
-
-  //파일 삭제
-  @DeleteMapping("/{id}")
-  public ResponseEntity<Void> deleteFile(
-      @PathVariable("id") Long id) {
-    fileService.deleteFile(id);
-    return ResponseEntity.noContent().build();
-  }
 }
