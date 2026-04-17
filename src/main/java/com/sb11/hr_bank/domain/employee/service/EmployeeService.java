@@ -120,7 +120,7 @@ public class EmployeeService {
                 : "month";
 
         if(!List.of("day", "week", "month", "quarter", "year").contains(unit)) {
-            throw new IllegalArgumentException("unit은 day, week, month, quarter, year만 가능합니다.");
+            throw new BusinessException(ErrorCode.EMPLOYEE_INVALID_TREND_UNIT);
         }
 
         LocalDate to = condition != null && condition.to() != null
@@ -135,11 +135,11 @@ public class EmployeeService {
                     case "month" -> to.minusMonths(11);
                     case "quarter" -> to.minusMonths(33);
                     case "year" -> to.minusYears(11);
-                    default -> throw new IllegalArgumentException("unit은 day, week, month, quarter, year만 가능합니다.");
+                    default -> throw new BusinessException(ErrorCode.EMPLOYEE_INVALID_TREND_UNIT);
                 };
 
         if(from.isAfter(to)) {
-            throw new IllegalArgumentException("from은 to보다 이후일 수 없습니다.");
+            throw new BusinessException(ErrorCode.EMPLOYEE_INVALID_DATE_RANGE);
         }
 
         List<LocalDate> buckets = new ArrayList<>();
@@ -235,7 +235,7 @@ public class EmployeeService {
             case "month" -> date.plusMonths(1);
             case "quarter" -> date.plusMonths(3);
             case "year" -> date.plusYears(1);
-            default -> throw new IllegalArgumentException("unit은 day, week, month, quarter, year만 가능합니다.");
+            default -> throw new BusinessException(ErrorCode.EMPLOYEE_INVALID_TREND_UNIT);
         };
     }
 }
