@@ -4,10 +4,12 @@ import com.sb11.hr_bank.domain.file.dto.FileResponse;
 import com.sb11.hr_bank.domain.file.entity.FileEntity;
 import com.sb11.hr_bank.domain.file.service.FileService;
 import com.sb11.hr_bank.domain.file.storage.FileStorage;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -52,5 +54,13 @@ public class FileController {
     FileEntity fileEntity = fileService.getFileMetadata(id);
 
     return fileStorage.download(fileEntity);
+  }
+
+  //파일 삭제
+  @DeleteMapping("/{id}")
+  public ResponseEntity<Void> deleteFile(
+      @PathVariable("id") Long id) {
+    fileService.deleteFile(id);
+    return ResponseEntity.noContent().build();
   }
 }
