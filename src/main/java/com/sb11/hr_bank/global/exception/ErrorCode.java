@@ -28,7 +28,9 @@ public enum ErrorCode {
   //EXAMPLE_DEPARTMENT_ERROR(500, "C001", "예시 메시지"),
 
   // file
-  //EXAMPLE_FILE_ERROR(500, "F001", "예시 메시지"),
+  FILE_EMPTY(400, "F001", "업로드 된 파일이 없습니다."),
+  FILE_NOT_FOUND(404, "F002", "해당 ID의 파일을 찾을 수 없습니다."),
+  FILE_STORAGE_ERROR(500, "F003", "파일을 저장소 통신 중 오류가 발생했습니다."),
 
   // backup
   //EXAMPLE_FILE_ERROR(500, "B001", "예시 메시지"),

@@ -2,6 +2,8 @@ package com.sb11.hr_bank.domain.file.service;
 
 import com.sb11.hr_bank.domain.file.entity.FileEntity;
 import com.sb11.hr_bank.domain.file.repository.FileRepository;
+import com.sb11.hr_bank.global.exception.BusinessException;
+import com.sb11.hr_bank.global.exception.ErrorCode;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -27,7 +29,7 @@ public class FileService {
   public FileEntity uploadFile(MultipartFile file) {
     //빈 파일 검증
     if (file == null || file.isEmpty()) {
-      throw new IllegalArgumentException("업로드 된 파일이 없습니다.");
+      throw new BusinessException(ErrorCode.FILE_EMPTY);
     }
 
     FileEntity savedEntity = saveMetadata(file.getOriginalFilename(), file.getContentType(), file.getSize());
@@ -38,7 +40,7 @@ public class FileService {
     try {
       file.transferTo(destPath.toFile());
     } catch (IOException e) {
-      throw new RuntimeException("로컬 파일 저장에 실패하여 DB 기록을 취소합니다.", e);
+      throw new BusinessException(ErrorCode.FILE_STORAGE_ERROR);
     }
 
     //저장된 파일의 ID 리턴
@@ -48,8 +50,8 @@ public class FileService {
   //파일 메타데이터 단건 조회
   public FileEntity getFileMetadata(Long id) {
     return fileRepository.findById(id)
-        .orElseThrow(() -> new IllegalArgumentException(
-            "해당 ID의 파일을 찾을 수 없습니다.: " + id));
+        .orElseThrow(() -> new BusinessException(
+            ErrorCode.FILE_NOT_FOUND));
   }
 
   //서버 내부 파일 저장용 메서드
@@ -62,7 +64,7 @@ public class FileService {
     try {
       Files.write(destPath, data);
     } catch (IOException e) {
-      throw new RuntimeException("내부 파일 로컬 저장에 실패하여 롤백합니다.", e);
+      throw new BusinessException(ErrorCode.FILE_STORAGE_ERROR);
     }
     return savedEntity;
   }
