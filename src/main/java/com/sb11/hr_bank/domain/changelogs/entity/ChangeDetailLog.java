@@ -26,21 +26,19 @@ public class ChangeDetailLog {
   private String columnName;
 
   // 변경 전 데이터
-  @Column(name = "before_value", columnDefinition = "TEXT", nullable = false)
-  private String beforeValue;
+  @Column(name = "before", columnDefinition = "TEXT")
+  private String before;
 
   // 변경 후 데이터
-  @Column(name = "after_value", columnDefinition = "TEXT", nullable = false)
-  private String afterValue;
+  @Column(name = "after", columnDefinition = "TEXT")
+  private String after;
 
   @Builder
-  public ChangeDetailLog(String columnName, String beforeValue, String afterValue) {
+  public ChangeDetailLog(String columnName, String before, String after) {
     this.columnName = columnName;
+    this.before = before;
+    this.after = after;
 
-    // 직원의 이전 내역 없을 때 "-" 로 표시
-    this.beforeValue = (beforeValue == null || beforeValue.isBlank()) ? "-" : beforeValue;
-    // 직원의 이후 내역 없을 때 "-" 로 표시
-    this.afterValue = (afterValue == null || afterValue.isBlank()) ? "-" : afterValue;
   }
 
   // 연관관계 편의 메서드 (ChangeLog의 addDetail에서 호출됨)
