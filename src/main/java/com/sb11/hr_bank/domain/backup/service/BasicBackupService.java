@@ -1,6 +1,7 @@
 package com.sb11.hr_bank.domain.backup.service;
 
 import com.sb11.hr_bank.domain.backup.dto.BackupResponse;
+import com.sb11.hr_bank.domain.backup.dto.BackupSearchCondition;
 import com.sb11.hr_bank.domain.backup.entity.Backup;
 import com.sb11.hr_bank.domain.backup.entity.BackupStatus;
 import com.sb11.hr_bank.domain.backup.repository.BackupRepository;
@@ -8,9 +9,12 @@ import com.sb11.hr_bank.domain.changelogs.repository.ChangeLogRepository;
 import com.sb11.hr_bank.domain.file.entity.FileEntity;
 import com.sb11.hr_bank.domain.file.repository.FileRepository;
 import com.sb11.hr_bank.domain.file.service.FileService;
+import com.sb11.hr_bank.global.dto.PageResponse;
 import java.time.Instant;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -79,12 +83,25 @@ public class BasicBackupService implements BackupService {
     }
   }
 
+  // 백업 목록 조회
   @Override
   @Transactional(readOnly = true)
-  public List<BackupResponse> findAll() {
-    return backupRepository.findAll().stream()
-        .map(BackupResponse::from)
-        .toList();
+  public PageResponse<BackupResponse> findAll(BackupSearchCondition condition) {
+    Pageable pageable = PageRequest.of(0, 10);
+
+    Slice<Backup> slice = backupRepository.search(
+        condition.worker(), condition.startFrom(),
+        condition.startTo(), condition.status(),
+        condition.cursor(), condition.sortBy(),
+        pageable);
+
+    Long nextIdAfter = slice.hasNext() ?
+        slice.getContent().get(slice.getNumberOfElements() - 1).getId() : null;
+
+    return PageResponse.fromSlice(slice.map(BackupResponse::from), null, nextIdAfter);
+//    return backupRepository.findAll().stream()
+//        .map(BackupResponse::from)
+//        .toList();
   }
 
   // 가장 최근의 백업을 조회(상태별 조회)
