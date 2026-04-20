@@ -55,7 +55,7 @@ public class EmployeeController implements EmployeeApi {
 
     @GetMapping
     public ResponseEntity<PageResponse<EmployeeDto>> findAll(
-            @ModelAttribute EmployeeSearchCondition condition
+            @Valid @ModelAttribute EmployeeSearchCondition condition
     ) {
         PageResponse<EmployeeDto> result = employeeService.findAllByCondition(condition);
         return ResponseEntity.ok(result);
