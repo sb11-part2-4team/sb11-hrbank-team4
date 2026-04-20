@@ -6,9 +6,7 @@ import com.sb11.hr_bank.domain.department.entity.Department;
 import com.sb11.hr_bank.domain.department.service.DepartmentService;
 import com.sb11.hr_bank.global.dto.PageResponse;
 import java.time.LocalDate;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,7 +21,7 @@ public class DepartmentController implements DepartmentApi {
 
   // 부서등록
   @Override
-  @PostMapping // 데이터를 새로 저장할 때 사용
+  @PostMapping
   public ResponseEntity<DepartmentResponse> createDepartment(@RequestBody DepartmentRequest request) {
     Department department = Department.builder()
         .name(request.departmentName())
@@ -55,7 +53,7 @@ public class DepartmentController implements DepartmentApi {
 
   // 부서삭제
   @Override
-  @DeleteMapping("/{id}") // 데이터를 삭제할 때 사용
+  @DeleteMapping("/{id}")
   public ResponseEntity<Void> deleteDepartment(@PathVariable Long id) {
     departmentService.delete(id);
     // 삭제 성공 시 200 OK를 반환합니다
@@ -74,8 +72,11 @@ public class DepartmentController implements DepartmentApi {
   // 전체 목록 조회
   @Override
   @GetMapping
-  public ResponseEntity<PageResponse<DepartmentResponse>> getAllDepartments() {
-    PageResponse<DepartmentResponse> response = departmentService.findAll();
+  public ResponseEntity<PageResponse<DepartmentResponse>> getAllDepartments(
+      @RequestParam(value = "page", defaultValue = "0") int page,
+      @RequestParam(value = "size", defaultValue = "10") int size
+  ) {
+    PageResponse<DepartmentResponse> response = departmentService.findAll(page, size);
     return ResponseEntity.ok(response);
   }
 }

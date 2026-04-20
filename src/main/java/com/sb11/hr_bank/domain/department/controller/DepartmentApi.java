@@ -26,5 +26,8 @@ public interface DepartmentApi {
   ResponseEntity<DepartmentResponse> getDepartmentDetail(@PathVariable Long id);
 
   @Operation(summary = "전체 부서 목록 조회")
-  ResponseEntity<PageResponse<DepartmentResponse>> getAllDepartments();
+  ResponseEntity<PageResponse<DepartmentResponse>> getAllDepartments(
+      @RequestParam(value = "page", defaultValue = "0") int page,
+      @RequestParam(value = "size", defaultValue = "10") int size
+  );
 }
