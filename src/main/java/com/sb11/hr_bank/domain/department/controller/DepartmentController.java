@@ -7,6 +7,7 @@ import com.sb11.hr_bank.domain.department.service.DepartmentService;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,7 +21,7 @@ public class DepartmentController implements DepartmentApi {
 
   // 부서등록
   @PostMapping // 데이터를 새로 저장할 때 사용
-  public ResponseEntity<Long> createDepartment(@RequestBody DepartmentRequest request) {
+  public ResponseEntity<Void> createDepartment(DepartmentRequest request) {
     // 화면에서 보낸 JSON 데이터를 DTO 바구니에 담아 받음
     // DTO에 담긴 내용을 꺼내 새로운 Entity로 만듬
     Department department = Department.builder()
@@ -29,9 +30,9 @@ public class DepartmentController implements DepartmentApi {
         .createdDate(LocalDate.parse(request.establishmentDate()))
         .build();
 
-    Long savedId = departmentService.save(department);
+    departmentService.save(department);
     // 201 Created 상태코드와 함께 저장된 ID를 반환
-    return ResponseEntity.status(HttpStatus.CREATED).body(savedId);
+    return ResponseEntity.status(HttpStatus.CREATED).build();
   }
 
   // 부서수정
@@ -67,9 +68,8 @@ public class DepartmentController implements DepartmentApi {
 
   // 전체 목록 조회
   @GetMapping
-  public ResponseEntity<List<Department>> getAllDepartments() {
-    List<Department> departments = departmentService.findAll();
-    // 리스트를 담아 200 OK와 함께 전송
-    return ResponseEntity.ok(departments);
+  public ResponseEntity<Page<DepartmentResponse>> getAllDepartments(Pageable pageable) {
+    Page<DepartmentResponse> responses = departmentService.findAll(pageable);
+    return ResponseEntity.ok(responses);
   }
 }

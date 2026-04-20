@@ -6,9 +6,10 @@ import com.sb11.hr_bank.domain.department.repository.DepartmentRepository;
 import com.sb11.hr_bank.domain.employee.entity.Employee;
 import com.sb11.hr_bank.domain.employee.repository.EmployeeRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 
 import java.util.List;
 
@@ -47,7 +48,7 @@ public class DepartmentService {
     }
     // 부서명을 바꾸려고 할 때, 이미 다른 부서에서 쓰고 있는 부서명인지 체크
 
-      department.setName(updateParam.getName());
+    department.setName(updateParam.getName());
     department.setDescription(updateParam.getDescription());
     department.setCreatedDate(updateParam.getCreatedDate());
   }
@@ -78,9 +79,13 @@ public class DepartmentService {
     return DepartmentResponse.from(department, employees);
   }
 
-  public List<Department> findAll() {
+  // 전체 부서 목록 조회 (페이지네이션 적용)
 
-    return departmentRepository.findAll();
+  public Page<DepartmentResponse> findAll(Pageable pageable) {
+        Page<Department> departments = departmentRepository.findAll(pageable);
+
+   return departments.map(dept -> {
+      List<Employee> employees = employeeRepository.findByDepartmentId(dept.getId());
+      return DepartmentResponse.from(dept, employees);
+    });
   }
-  // 리포지토리에게 DB에 있는 모든 부서 정보를 볼수 있게
-}
