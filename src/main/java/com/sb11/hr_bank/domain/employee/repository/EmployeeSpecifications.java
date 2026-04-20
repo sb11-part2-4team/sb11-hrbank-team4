@@ -146,7 +146,7 @@ public class EmployeeSpecifications {
     }
 
     private static String contains(String value) {
-        return "%" + value.toLowerCase() + "%";
+        return "%" + value.trim().toLowerCase() + "%";
     }
 
     private static <T extends Comparable<? super T>> Predicate cursorPredicate(
