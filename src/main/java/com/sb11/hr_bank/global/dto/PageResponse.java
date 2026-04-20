@@ -1,7 +1,5 @@
 package com.sb11.hr_bank.global.dto;
 
-import com.sb11.hr_bank.domain.department.dto.DepartmentResponse;
-import com.sb11.hr_bank.domain.department.entity.Department;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Slice;
@@ -15,10 +13,6 @@ public record PageResponse<T>(
     Long totalElements,
     boolean hasNext
 ) {
-
-  public PageResponse(List<DepartmentResponse> content,
-      Page<Department> departments) {
-  }
 
   public static <T> PageResponse<T> fromPage(Page<T> page){
 

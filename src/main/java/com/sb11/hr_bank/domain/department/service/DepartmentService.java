@@ -98,7 +98,7 @@ public class DepartmentService {
       return DepartmentResponse.from(dept, employees);
     }).getContent();
 
-    return new PageResponse<>(content, departments);
+    return new PageResponse<>(content, null, null, departments.getSize(), departments.getTotalElements(), departments.hasNext());
 
   }
 }

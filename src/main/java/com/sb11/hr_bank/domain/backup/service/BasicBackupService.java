@@ -6,12 +6,16 @@ import com.sb11.hr_bank.domain.backup.entity.Backup;
 import com.sb11.hr_bank.domain.backup.entity.BackupStatus;
 import com.sb11.hr_bank.domain.backup.repository.BackupRepository;
 import com.sb11.hr_bank.domain.changelogs.repository.ChangeLogRepository;
+import com.sb11.hr_bank.domain.employee.entity.Employee;
+import com.sb11.hr_bank.domain.employee.repository.EmployeeRepository;
 import com.sb11.hr_bank.domain.file.entity.FileEntity;
 import com.sb11.hr_bank.domain.file.repository.FileRepository;
 import com.sb11.hr_bank.domain.file.service.FileService;
 import com.sb11.hr_bank.global.dto.PageResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -27,6 +31,7 @@ public class BasicBackupService implements BackupService {
   private final BackupRepository backupRepository;
   private final ChangeLogRepository changeLogRepository;
   private final FileRepository fileRepository;
+  private final EmployeeRepository employeeRepository;
 
   private final FileService fileService;
   private final BackupTxService backupTxService;
@@ -62,8 +67,21 @@ public class BasicBackupService implements BackupService {
       // CSV 파일 생성, CSV 파일을 저장, 성공 상태로 전환
 
       // CSV 파일로 백업 데이터를 생성
-      String csv = "";
-      byte[] csvData = csv.getBytes(StandardCharsets.UTF_8);
+      List<Employee> employees = employeeRepository.findAll();
+      DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+      StringBuilder sb = new StringBuilder();
+      sb.append("ID,직원번호,이름,이메일,부서,직급,입사일,상태\n");
+      for (Employee employee : employees) {
+        sb.append(employee.getId()).append(",")
+            .append(employee.getEmployeeNumber()).append(",")
+            .append(escapeCsv(employee.getName())).append(",")
+            .append(escapeCsv(employee.getEmail())).append(",")
+            .append(escapeCsv(employee.getDepartment().getName())).append(",")
+            .append(escapeCsv(employee.getPosition())).append(",")
+            .append(employee.getHireDate().format(formatter)).append(",")
+            .append(employee.getEmployeeStatus()).append("\n");
+      }
+      byte[] csvData = sb.toString().getBytes(StandardCharsets.UTF_8);
 
       file = fileService.saveInternalData("backup_data.csv", "text/csv", csvData);
 
@@ -109,5 +127,16 @@ public class BasicBackupService implements BackupService {
         );
 
     return BackupResponse.from(backup);
+  }
+
+  private String escapeCsv(String value) {
+    if (value == null) {
+      return "";
+    }
+    value = value.replace("\"", " ");
+    value = value.replace("\r", " ");
+    value = value.replace("\n", " ");
+    value = value.replace(",", " ");
+    return value;
   }
 }
