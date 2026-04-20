@@ -5,7 +5,7 @@ import com.sb11.hr_bank.domain.department.entity.Department;
 import com.sb11.hr_bank.domain.department.repository.DepartmentRepository;
 import com.sb11.hr_bank.domain.employee.entity.Employee;
 import com.sb11.hr_bank.domain.employee.repository.EmployeeRepository;
-import com.sb11.hr_bank.global.common.dto.PageResponse; // 팀 공통 PageResponse 경로 확인 필요
+import com.sb11.hr_bank.global.dto.PageResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -92,10 +92,12 @@ public class DepartmentService {
   public PageResponse<DepartmentResponse> findAll() {
     PageRequest pageRequest = PageRequest.of(0, 10);
     Page<Department> departments = departmentRepository.findAll(pageRequest);
+
     List<DepartmentResponse> content = departments.map(dept -> {
       List<Employee> employees = employeeRepository.findByDepartmentId(dept.getId());
       return DepartmentResponse.from(dept, employees);
     }).getContent();
+
     return new PageResponse<>(content, departments);
   }
 }
