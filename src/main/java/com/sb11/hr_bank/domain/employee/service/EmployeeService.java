@@ -102,18 +102,39 @@ public class EmployeeService {
 
     @Transactional(readOnly = true)
     public PageResponse<EmployeeDto> findAllByCondition(EmployeeSearchCondition condition) {
-        int size = pageSize(condition);
+        int size = condition == null || condition.size() == null || condition.size() <= 0
+                ? 10
+                : condition.size();
         EmployeeCursor cursor = decodeCursor(condition);
+        Sort.Direction direction = sortDirection(condition);
+        String sortField = sortField(condition);
 
         Page<Employee> page = employeeRepository.findAll(
                 EmployeeSpecifications.searchCondition(condition)
                         .and(EmployeeSpecifications.cursorCondition(cursor)),
-                PageRequest.of(0, size + 1, sort(condition))
+                PageRequest.of(
+                        0,
+                        size + 1,
+                        Sort.by(direction, sortField).and(Sort.by(direction, "id"))
+                )
         );
+
         List<Employee> pageContent = page.getContent();
         Long totalElements = employeeRepository.count(EmployeeSpecifications.searchCondition(condition));
+
+        if(pageContent.isEmpty()) {
+            return employeePageResponseMapper.toPageResponse(
+                    pageContent,
+                    null,
+                    null,
+                    size,
+                    totalElements,
+                    false
+            );
+        }
+
         boolean hasNext = pageContent.size() > size;
-        Employee last = lastEmployee(pageContent, size, hasNext);
+        Employee last = hasNext ? pageContent.get(size - 1) : null;
 
         return employeePageResponseMapper.toPageResponse(
                 hasNext ? pageContent.subList(0, size) : pageContent,
@@ -127,7 +148,27 @@ public class EmployeeService {
 
     @Transactional(readOnly = true)
     public Long countByCondition(EmployeeCountCondition condition) {
-        EmployeeCountCondition normalizedCondition = normalizeCountCondition(condition);
+        if(condition == null) {
+            return employeeRepository.count(EmployeeSpecifications.countCondition(null));
+        }
+
+        LocalDate fromDate = condition.fromDate();
+        LocalDate toDate = condition.toDate();
+
+        if(fromDate != null && toDate == null) {
+            toDate = LocalDate.now();
+        }
+
+        if(fromDate != null && fromDate.isAfter(toDate)) {
+            throw new BusinessException(ErrorCode.EMPLOYEE_INVALID_DATE_RANGE);
+        }
+
+        EmployeeCountCondition normalizedCondition = new EmployeeCountCondition(
+                condition.status(),
+                fromDate,
+                toDate
+        );
+
         return employeeRepository.count(EmployeeSpecifications.countCondition(normalizedCondition));
     }
 
@@ -271,18 +312,6 @@ public class EmployeeService {
         }
     }
 
-    private EmployeeCountCondition normalizeCountCondition(EmployeeCountCondition condition) {
-        if(condition == null || condition.fromDate() == null || condition.toDate() != null) {
-            return condition;
-        }
-
-        return new EmployeeCountCondition(
-                condition.status(),
-                condition.fromDate(),
-                LocalDate.now()
-        );
-    }
-
     private double calculateRate(long value, long total) {
         if(total == 0) {
             return 0.0;
@@ -300,21 +329,6 @@ public class EmployeeService {
             case "year" -> date.plusYears(1);
             default -> throw new BusinessException(ErrorCode.EMPLOYEE_INVALID_TREND_UNIT);
         };
-    }
-
-    private int pageSize(EmployeeSearchCondition condition) {
-        if(condition == null || condition.size() == null || condition.size() <= 0) {
-            return 10;
-        }
-
-        return condition.size();
-    }
-
-    private Sort sort(EmployeeSearchCondition condition) {
-        Sort.Direction direction = sortDirection(condition);
-
-        return Sort.by(direction, sortField(condition))
-                .and(Sort.by(direction, "id"));
     }
 
     private Sort.Direction sortDirection(EmployeeSearchCondition condition) {
@@ -340,19 +354,16 @@ public class EmployeeService {
         };
     }
 
-    private Employee lastEmployee(List<Employee> employees, int size, boolean hasNext) {
-        if(!hasNext || employees.isEmpty()) {
-            return null;
-        }
-
-        return employees.get(size - 1);
-    }
-
     private String encodeCursor(Employee employee, EmployeeSearchCondition condition) {
         String sortField = sortField(condition);
 
         Map<String, Object> cursor = new LinkedHashMap<>();
-        cursor.put(sortField, cursorValue(employee, sortField));
+        cursor.put(sortField, switch (sortField) {
+            case "name" -> employee.getName();
+            case "employeeNumber" -> employee.getEmployeeNumber();
+            case "hireDate" -> employee.getHireDate().toString();
+            default -> throw new BusinessException(ErrorCode.EMPLOYEE_INVALID_SORT_FIELD);
+        });
 
         try {
             byte[] json = objectMapper.writeValueAsBytes(cursor);
@@ -360,15 +371,6 @@ public class EmployeeService {
         } catch (JsonProcessingException e) {
             throw new BusinessException(ErrorCode.EMPLOYEE_CURSOR_ENCODING_FAILED);
         }
-    }
-
-    private String cursorValue(Employee employee, String sortField) {
-        return switch (sortField) {
-            case "name" -> employee.getName();
-            case "employeeNumber" -> employee.getEmployeeNumber();
-            case "hireDate" -> employee.getHireDate().toString();
-            default -> throw new BusinessException(ErrorCode.EMPLOYEE_INVALID_SORT_FIELD);
-        };
     }
 
     private EmployeeCursor decodeCursor(EmployeeSearchCondition condition) {
@@ -416,7 +418,7 @@ public class EmployeeService {
         try {
             fileService.cleanupDummyFile(file.getId());
         } catch (Exception e) {
-            log.warn("업로드 파일 정리 실패. fileId={}", file.getId());
+            log.warn("업로드 파일 정리 실패. fileId={}", file.getId(), e);
         }
     }
 }
