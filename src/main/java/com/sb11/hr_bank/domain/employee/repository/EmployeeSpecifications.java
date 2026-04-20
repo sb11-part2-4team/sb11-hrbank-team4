@@ -24,6 +24,10 @@ public class EmployeeSpecifications {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
+            if(query != null && query.getResultType() != Long.class && query.getResultType() != long.class) {
+                root.fetch("department", JoinType.LEFT);
+            }
+
             if(condition == null) {
                 return cb.conjunction();
             }
