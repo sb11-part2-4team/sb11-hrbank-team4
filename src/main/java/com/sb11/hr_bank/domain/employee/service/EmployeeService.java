@@ -1,11 +1,13 @@
 package com.sb11.hr_bank.domain.employee.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sb11.hr_bank.domain.department.entity.Department;
 import com.sb11.hr_bank.domain.department.repository.DepartmentRepository;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeCountCondition;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeCreateRequest;
+import com.sb11.hr_bank.domain.employee.dto.EmployeeCursor;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeDistributionCondition;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeDistributionDto;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeDistributionRow;
@@ -90,9 +92,11 @@ public class EmployeeService {
     @Transactional(readOnly = true)
     public PageResponse<EmployeeDto> findAllByCondition(EmployeeSearchCondition condition) {
         int size = pageSize(condition);
+        EmployeeCursor cursor = decodeCursor(condition);
 
         Page<Employee> page = employeeRepository.findAll(
-                EmployeeSpecifications.searchCondition(condition),
+                EmployeeSpecifications.searchCondition(condition)
+                        .and(EmployeeSpecifications.cursorCondition(cursor)),
                 PageRequest.of(0, size + 1, sort(condition))
         );
         List<Employee> pageContent = page.getContent();
@@ -334,5 +338,34 @@ public class EmployeeService {
             case "hireDate" -> employee.getHireDate().toString();
             default -> throw new BusinessException(ErrorCode.EMPLOYEE_INVALID_SORT_FIELD);
         };
+    }
+
+    private EmployeeCursor decodeCursor(EmployeeSearchCondition condition) {
+        if(condition == null || condition.cursor() == null || condition.cursor().isBlank()
+                || condition.idAfter() == null) {
+            return null;
+        }
+
+        String sortField = sortField(condition);
+
+        try {
+            byte[] decoded = Base64.getUrlDecoder().decode(condition.cursor());
+            JsonNode json = objectMapper.readTree(decoded);
+
+            if(!json.hasNonNull(sortField)) {
+                throw new BusinessException(ErrorCode.EMPLOYEE_INVALID_CURSOR);
+            }
+
+            return new EmployeeCursor(
+                    sortField,
+                    json.get(sortField).asText(),
+                    condition.idAfter(),
+                    sortDirection(condition).name()
+            );
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new BusinessException(ErrorCode.EMPLOYEE_INVALID_CURSOR);
+        }
     }
 }

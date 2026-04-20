@@ -28,6 +28,7 @@ public enum ErrorCode {
   EMPLOYEE_INVALID_SORT_DIRECTION(400, "E007", "sortDirection은 asc 또는 desc만 가능합니다."),
   EMPLOYEE_INVALID_SORT_FIELD(400, "E008", "sortField는 name, employeeNumber, hireDate만 가능합니다."),
   EMPLOYEE_CURSOR_ENCODING_FAILED(500, "E009", "직원 목록 커서 생성에 실패했습니다."),
+  EMPLOYEE_INVALID_CURSOR(400, "E010", "유효하지 않은 직원 목록 커서입니다."),
 
   // department
   //EXAMPLE_DEPARTMENT_ERROR(500, "D001", "예시 메시지"),
