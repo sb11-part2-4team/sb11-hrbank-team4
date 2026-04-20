@@ -179,7 +179,10 @@ public class BasicBackupService implements BackupService {
         (last != null) ? Base64.getEncoder().encodeToString(String.valueOf(last.getId()).getBytes())
             : null;
 
-    return PageResponse.fromSlice(slice.map(BackupResponse::from), nextCursor, nextIdAfter);
+    // 트리밍된 content 리스트로 응답 데이터를 생성(slice.map은 size+1개를 포함하므로 사용 불가)
+    List<BackupResponse> responseContent = content.stream().map(BackupResponse::from).toList();
+
+    return new PageResponse<>(responseContent, nextCursor, nextIdAfter, responseContent.size(), null, hasNext);
   }
 
   // 가장 최근의 백업을 조회(상태별 조회)
