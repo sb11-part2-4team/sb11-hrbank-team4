@@ -1,5 +1,7 @@
 package com.sb11.hr_bank.domain.employee.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sb11.hr_bank.domain.department.entity.Department;
 import com.sb11.hr_bank.domain.department.repository.DepartmentRepository;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeCountCondition;
@@ -31,7 +33,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Base64;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -42,6 +47,7 @@ public class EmployeeService {
     private final DepartmentRepository departmentRepository;
     private final EmployeeMapper employeeMapper;
     private final EmployeePageResponseMapper employeePageResponseMapper;
+    private final ObjectMapper objectMapper;
 
     public EmployeeDto create(EmployeeCreateRequest dto, FileEntity file) {
         if(employeeRepository.findByEmail(dto.email()).isPresent()) {
@@ -89,12 +95,15 @@ public class EmployeeService {
                 EmployeeSpecifications.searchCondition(condition),
                 PageRequest.of(0, size + 1, sort(condition))
         );
+        List<Employee> pageContent = page.getContent();
         Long totalElements = employeeRepository.count(EmployeeSpecifications.searchCondition(condition));
-        boolean hasNext = page.getContent().size() > size;
+        boolean hasNext = pageContent.size() > size;
+        Employee last = lastEmployee(pageContent, size, hasNext);
 
         return employeePageResponseMapper.toPageResponse(
-                page.getContent(),
-                condition,
+                hasNext ? pageContent.subList(0, size) : pageContent,
+                last != null ? encodeCursor(last, condition) : null,
+                last != null ? last.getId() : null,
                 size,
                 totalElements,
                 hasNext
@@ -292,6 +301,37 @@ public class EmployeeService {
 
         return switch (condition.sortField()) {
             case "name", "employeeNumber", "hireDate" -> condition.sortField();
+            default -> throw new BusinessException(ErrorCode.EMPLOYEE_INVALID_SORT_FIELD);
+        };
+    }
+
+    private Employee lastEmployee(List<Employee> employees, int size, boolean hasNext) {
+        if(!hasNext || employees.isEmpty()) {
+            return null;
+        }
+
+        return employees.get(size - 1);
+    }
+
+    private String encodeCursor(Employee employee, EmployeeSearchCondition condition) {
+        String sortField = sortField(condition);
+
+        Map<String, Object> cursor = new LinkedHashMap<>();
+        cursor.put(sortField, cursorValue(employee, sortField));
+
+        try {
+            byte[] json = objectMapper.writeValueAsBytes(cursor);
+            return Base64.getUrlEncoder().withoutPadding().encodeToString(json);
+        } catch (JsonProcessingException e) {
+            throw new BusinessException(ErrorCode.EMPLOYEE_CURSOR_ENCODING_FAILED);
+        }
+    }
+
+    private String cursorValue(Employee employee, String sortField) {
+        return switch (sortField) {
+            case "name" -> employee.getName();
+            case "employeeNumber" -> employee.getEmployeeNumber();
+            case "hireDate" -> employee.getHireDate().toString();
             default -> throw new BusinessException(ErrorCode.EMPLOYEE_INVALID_SORT_FIELD);
         };
     }
