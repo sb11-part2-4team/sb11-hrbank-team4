@@ -1,9 +1,13 @@
 package com.sb11.hr_bank.domain.employee.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sb11.hr_bank.domain.department.entity.Department;
 import com.sb11.hr_bank.domain.department.repository.DepartmentRepository;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeCountCondition;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeCreateRequest;
+import com.sb11.hr_bank.domain.employee.dto.EmployeeCursor;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeDistributionCondition;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeDistributionDto;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeDistributionRow;
@@ -15,19 +19,31 @@ import com.sb11.hr_bank.domain.employee.dto.EmployeeUpdateRequest;
 import com.sb11.hr_bank.domain.employee.entity.Employee;
 import com.sb11.hr_bank.domain.employee.entity.EmployeeStatus;
 import com.sb11.hr_bank.domain.employee.mapper.EmployeeMapper;
+import com.sb11.hr_bank.domain.employee.mapper.EmployeePageResponseMapper;
 import com.sb11.hr_bank.domain.employee.repository.EmployeeRepository;
 import com.sb11.hr_bank.domain.employee.repository.EmployeeSpecifications;
 import com.sb11.hr_bank.domain.file.entity.FileEntity;
+import com.sb11.hr_bank.domain.file.service.FileService;
+import com.sb11.hr_bank.global.dto.PageResponse;
 import com.sb11.hr_bank.global.exception.BusinessException;
 import com.sb11.hr_bank.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Base64;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -35,9 +51,12 @@ public class EmployeeService {
 
     private final EmployeeRepository employeeRepository;
     private final DepartmentRepository departmentRepository;
+    private final FileService fileService;
     private final EmployeeMapper employeeMapper;
+    private final EmployeePageResponseMapper employeePageResponseMapper;
+    private final ObjectMapper objectMapper;
 
-    public EmployeeDto create(EmployeeCreateRequest dto, FileEntity file) {
+    public EmployeeDto create(EmployeeCreateRequest dto, MultipartFile profile) {
         if(employeeRepository.findByEmail(dto.email()).isPresent()) {
             throw new BusinessException(ErrorCode.EMPLOYEE_DUPLICATE_EMAIL);
         }
@@ -46,25 +65,31 @@ public class EmployeeService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.EMPLOYEE_DEPARTMENT_NOT_FOUND));
 
         LocalDate hireDate = dto.hireDate();
-        long count = employeeRepository.countByHireDateBetween(
-                LocalDate.of(hireDate.getYear(), 1, 1),
-                LocalDate.of(hireDate.getYear(), 12, 31)
-        );
-        String employeeNumber = String.format("EMP-%d-%03d", hireDate.getYear(), count + 1);
+        int year = hireDate.getYear();
+        int nextSequence = employeeRepository.findMaxEmployeeNumberByYear(year)
+                .map(employeeNumber -> Integer.parseInt(employeeNumber.substring(employeeNumber.lastIndexOf("-") + 1)) + 1)
+                .orElse(1);
+        String employeeNumber = String.format("EMP-%d-%03d", hireDate.getYear(), nextSequence);
 
-        Employee employee = new Employee(
-                dto.name(),
-                dto.email(),
-                employeeNumber,
-                department,
-                dto.position(),
-                dto.hireDate(),
-                file
-        );
+        FileEntity file = uploadProfileIfPresent(profile);
+        try {
+            Employee employee = new Employee(
+                    dto.name(),
+                    dto.email(),
+                    employeeNumber,
+                    department,
+                    dto.position(),
+                    dto.hireDate(),
+                    file
+            );
+            employeeRepository.save(employee);
 
-        employeeRepository.save(employee);
+            return employeeMapper.toDto(employee);
+        } catch (RuntimeException e) {
+            cleanupUploadedFile(file);
+            throw e;
+        }
 
-        return employeeMapper.toDto(employee);
     }
 
     @Transactional(readOnly = true)
@@ -76,15 +101,74 @@ public class EmployeeService {
     }
 
     @Transactional(readOnly = true)
-    public List<EmployeeDto> findAllByCondition(EmployeeSearchCondition condition) {
-        return employeeRepository.findAll(EmployeeSpecifications.searchCondition(condition)).stream()
-                .map(employeeMapper::toDto)
-                .toList();
+    public PageResponse<EmployeeDto> findAllByCondition(EmployeeSearchCondition condition) {
+        int size = condition == null || condition.size() == null || condition.size() <= 0
+                ? 10
+                : condition.size();
+        EmployeeCursor cursor = decodeCursor(condition);
+        Sort.Direction direction = sortDirection(condition);
+        String sortField = sortField(condition);
+
+        Page<Employee> page = employeeRepository.findAll(
+                EmployeeSpecifications.searchCondition(condition)
+                        .and(EmployeeSpecifications.cursorCondition(cursor)),
+                PageRequest.of(
+                        0,
+                        size + 1,
+                        Sort.by(direction, sortField).and(Sort.by(direction, "id"))
+                )
+        );
+
+        List<Employee> pageContent = page.getContent();
+        Long totalElements = employeeRepository.count(EmployeeSpecifications.searchCondition(condition));
+
+        if(pageContent.isEmpty()) {
+            return employeePageResponseMapper.toPageResponse(
+                    pageContent,
+                    null,
+                    null,
+                    size,
+                    totalElements,
+                    false
+            );
+        }
+
+        boolean hasNext = pageContent.size() > size;
+        Employee last = hasNext ? pageContent.get(size - 1) : null;
+
+        return employeePageResponseMapper.toPageResponse(
+                hasNext ? pageContent.subList(0, size) : pageContent,
+                last != null ? encodeCursor(last, condition) : null,
+                last != null ? last.getId() : null,
+                size,
+                totalElements,
+                hasNext
+        );
     }
 
     @Transactional(readOnly = true)
     public Long countByCondition(EmployeeCountCondition condition) {
-        EmployeeCountCondition normalizedCondition = normalizeCountCondition(condition);
+        if(condition == null) {
+            return employeeRepository.count(EmployeeSpecifications.countCondition(null));
+        }
+
+        LocalDate fromDate = condition.fromDate();
+        LocalDate toDate = condition.toDate();
+
+        if(fromDate != null && toDate == null) {
+            toDate = LocalDate.now();
+        }
+
+        if(fromDate != null && fromDate.isAfter(toDate)) {
+            throw new BusinessException(ErrorCode.EMPLOYEE_INVALID_DATE_RANGE);
+        }
+
+        EmployeeCountCondition normalizedCondition = new EmployeeCountCondition(
+                condition.status(),
+                fromDate,
+                toDate
+        );
+
         return employeeRepository.count(EmployeeSpecifications.countCondition(normalizedCondition));
     }
 
@@ -176,7 +260,7 @@ public class EmployeeService {
         return result;
     }
 
-    public void update(Long id, EmployeeUpdateRequest dto, FileEntity file) {
+    public void update(Long id, EmployeeUpdateRequest dto, MultipartFile profile) {
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.EMPLOYEE_NOT_FOUND));
 
@@ -188,36 +272,44 @@ public class EmployeeService {
         Department department = departmentRepository.findById(dto.departmentId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.EMPLOYEE_DEPARTMENT_NOT_FOUND));
 
-        FileEntity fileEntity = file != null ? file : employee.getProfileImage();
+        FileEntity oldProfile = employee.getProfileImage();
+        FileEntity newProfile = uploadProfileIfPresent(profile);
+        FileEntity fileEntity = newProfile != null ? newProfile : oldProfile;
 
-        employee.update(
-                dto.name(),
-                dto.email(),
-                department,
-                dto.position(),
-                dto.hireDate(),
-                dto.status(),
-                fileEntity
-        );
+        try {
+            employee.update(
+                    dto.name(),
+                    dto.email(),
+                    department,
+                    dto.position(),
+                    dto.hireDate(),
+                    dto.status(),
+                    fileEntity
+            );
+            employeeRepository.flush();
+
+            if(newProfile != null && oldProfile != null) {
+                fileService.deleteFile(oldProfile.getId());
+            }
+        } catch (RuntimeException e) {
+            cleanupUploadedFile(newProfile);
+            throw e;
+        }
+
     }
 
     public void delete(Long id) {
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.EMPLOYEE_NOT_FOUND));
 
+        FileEntity profile = employee.getProfileImage();
+
         employeeRepository.delete(employee);
-    }
+        employeeRepository.flush();
 
-    private EmployeeCountCondition normalizeCountCondition(EmployeeCountCondition condition) {
-        if(condition == null || condition.fromDate() == null || condition.toDate() != null) {
-            return condition;
+        if(profile != null) {
+            fileService.deleteFile(profile.getId());
         }
-
-        return new EmployeeCountCondition(
-                condition.status(),
-                condition.fromDate(),
-                LocalDate.now()
-        );
     }
 
     private double calculateRate(long value, long total) {
@@ -237,5 +329,96 @@ public class EmployeeService {
             case "year" -> date.plusYears(1);
             default -> throw new BusinessException(ErrorCode.EMPLOYEE_INVALID_TREND_UNIT);
         };
+    }
+
+    private Sort.Direction sortDirection(EmployeeSearchCondition condition) {
+        if(condition == null || condition.sortDirection() == null || condition.sortDirection().isBlank()) {
+            return Sort.Direction.ASC;
+        }
+
+        return switch (condition.sortDirection().toLowerCase()) {
+            case "asc" -> Sort.Direction.ASC;
+            case "desc" -> Sort.Direction.DESC;
+            default -> throw new BusinessException(ErrorCode.EMPLOYEE_INVALID_SORT_DIRECTION);
+        };
+    }
+
+    private String sortField(EmployeeSearchCondition condition) {
+        if(condition == null || condition.sortField() == null || condition.sortField().isBlank()) {
+            return "name";
+        }
+
+        return switch (condition.sortField()) {
+            case "name", "employeeNumber", "hireDate" -> condition.sortField();
+            default -> throw new BusinessException(ErrorCode.EMPLOYEE_INVALID_SORT_FIELD);
+        };
+    }
+
+    private String encodeCursor(Employee employee, EmployeeSearchCondition condition) {
+        String sortField = sortField(condition);
+
+        Map<String, Object> cursor = new LinkedHashMap<>();
+        cursor.put(sortField, switch (sortField) {
+            case "name" -> employee.getName();
+            case "employeeNumber" -> employee.getEmployeeNumber();
+            case "hireDate" -> employee.getHireDate().toString();
+            default -> throw new BusinessException(ErrorCode.EMPLOYEE_INVALID_SORT_FIELD);
+        });
+
+        try {
+            byte[] json = objectMapper.writeValueAsBytes(cursor);
+            return Base64.getUrlEncoder().withoutPadding().encodeToString(json);
+        } catch (JsonProcessingException e) {
+            throw new BusinessException(ErrorCode.EMPLOYEE_CURSOR_ENCODING_FAILED);
+        }
+    }
+
+    private EmployeeCursor decodeCursor(EmployeeSearchCondition condition) {
+        if(condition == null || condition.cursor() == null || condition.cursor().isBlank()
+                || condition.idAfter() == null) {
+            return null;
+        }
+
+        String sortField = sortField(condition);
+
+        try {
+            byte[] decoded = Base64.getUrlDecoder().decode(condition.cursor());
+            JsonNode json = objectMapper.readTree(decoded);
+
+            if(!json.hasNonNull(sortField)) {
+                throw new BusinessException(ErrorCode.EMPLOYEE_INVALID_CURSOR);
+            }
+
+            return new EmployeeCursor(
+                    sortField,
+                    json.get(sortField).asText(),
+                    condition.idAfter(),
+                    sortDirection(condition).name()
+            );
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new BusinessException(ErrorCode.EMPLOYEE_INVALID_CURSOR);
+        }
+    }
+
+    private FileEntity uploadProfileIfPresent(MultipartFile profile) {
+        if(profile == null || profile.isEmpty()) {
+            return null;
+        }
+
+        return fileService.uploadFile(profile);
+    }
+
+    private void cleanupUploadedFile(FileEntity file) {
+        if(file == null) {
+            return;
+        }
+
+        try {
+            fileService.cleanupDummyFile(file.getId());
+        } catch (Exception e) {
+            log.warn("업로드 파일 정리 실패. fileId={}", file.getId(), e);
+        }
     }
 }

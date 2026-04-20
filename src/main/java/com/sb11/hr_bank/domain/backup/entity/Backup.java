@@ -2,6 +2,8 @@ package com.sb11.hr_bank.domain.backup.entity;
 
 import com.sb11.hr_bank.domain.file.entity.FileEntity;
 import com.sb11.hr_bank.global.base.BaseEntity;
+import com.sb11.hr_bank.global.exception.BusinessException;
+import com.sb11.hr_bank.global.exception.ErrorCode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -71,10 +73,10 @@ public class Backup extends BaseEntity {
   public void complete(FileEntity csvFile) {
     // IN_PROGRESS 상태가 아니면 예외
     if (this.status != BackupStatus.IN_PROGRESS) {
-      throw new IllegalStateException("진행 중인 백업만 완료 처리할 수 있습니다.");
+      throw new BusinessException(ErrorCode.BACKUP_NOT_IN_PROGRESS);
     }
     if (csvFile == null) {
-      throw new IllegalArgumentException("백업을 완료하였지만 csvFile이 생성되지 않았습니다.");
+      throw new BusinessException(ErrorCode.BACKUP_REQUIRED_FILE);
     }
     this.file = csvFile;
     this.status = BackupStatus.COMPLETED;
@@ -84,12 +86,12 @@ public class Backup extends BaseEntity {
   // IN_PROGRESS(진행중) 상태-> FAILED 상태로
   public void fail(FileEntity logFile) {
     if (this.status != BackupStatus.IN_PROGRESS) {
-      throw new IllegalStateException("진행 중인 백업만 실패 처리할 수 있습니다.");
+      throw new BusinessException(ErrorCode.BACKUP_NOT_IN_PROGRESS);
     }
-    if (logFile == null) {
-      throw new IllegalArgumentException("백업을 완료하였지만 logFile이 생성되지 않았습니다.");
+    // NPE 방지
+    if (logFile != null) {
+      this.file = logFile;
     }
-    this.file = logFile;
     this.status = BackupStatus.FAILED;
     this.endedAt = Instant.now();
   }

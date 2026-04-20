@@ -3,6 +3,8 @@ package com.sb11.hr_bank.domain.employee.repository;
 import com.sb11.hr_bank.domain.employee.entity.Employee;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -12,9 +14,16 @@ public interface EmployeeRepository
         extends JpaRepository<Employee, Long>,
         JpaSpecificationExecutor<Employee>,
         EmployeeRepositoryCustom {
+
     Optional<Employee> findByEmail(String email);
     Long countByHireDateBetween(LocalDate start, LocalDate end);
     Long countByHireDateLessThan(LocalDate date);
     boolean existsByDepartmentId(Long departmentId);
     List<Employee> findByDepartmentId(Long departmentId);
+
+    @Query("SELECT MAX(e.employeeNumber) FROM Employee e WHERE e.employeeNumber LIKE CONCAT('EMP-', :year, '-%')")
+    Optional<String> findMaxEmployeeNumberByYear(@Param("year") int year);
+
+    @Query("SELECT e FROM Employee e JOIN FETCH e.department")
+    List<Employee> findAllWithDepartment();
 }

@@ -5,14 +5,16 @@ import com.sb11.hr_bank.domain.department.entity.Department;
 import com.sb11.hr_bank.domain.department.repository.DepartmentRepository;
 import com.sb11.hr_bank.domain.employee.entity.Employee;
 import com.sb11.hr_bank.domain.employee.repository.EmployeeRepository;
-import com.sb11.hr_bank.global.common.dto.PageResponse; // 팀 공통 PageResponse 경로 확인 필요
+import com.sb11.hr_bank.global.dto.PageResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service // 이클래스가 핵심 비지니스 로직을 처리하는 서비스계층임을 선언
 @RequiredArgsConstructor // final이 붙은 레포지토리를 스프링이 자동으로 연결
@@ -29,10 +31,9 @@ public class DepartmentService {
 
   public DepartmentResponse save(Department department) {
     if (departmentRepository.existsByName(department.getName())) {
-      throw new IllegalArgumentException("이미 존재하는 부서명 입니다");
+      throw new IllegalArgumentException("이미 존재하는 부서명입니다.");
     } // 입렵한 부서명이 이미 DB에 있는지 확인하고 중복 메세지 구현
     Department savedDepartment = departmentRepository.save(department);
-
     return DepartmentResponse.from(savedDepartment, List.of());
   } // 중복이 없으면 DB에 저장
 
@@ -89,13 +90,23 @@ public class DepartmentService {
 
   // 전체 부서 목록 조회 (페이지네이션 적용)
 
-  public PageResponse<DepartmentResponse> findAll() {
-    PageRequest pageRequest = PageRequest.of(0, 10);
-    Page<Department> departments = departmentRepository.findAll(pageRequest);
-    List<DepartmentResponse> content = departments.map(dept -> {
-      List<Employee> employees = employeeRepository.findByDepartmentId(dept.getId());
-      return DepartmentResponse.from(dept, employees);
-    }).getContent();
-    return new PageResponse<>(content, departments);
+  public PageResponse<DepartmentResponse> findAll(Pageable pageable) {
+
+    Page<Department> departmentPage = departmentRepository.findAll(pageable);
+
+    List<Department> departments = departmentPage.getContent();
+    List<Long> deptIds = departments.stream().map(Department::getId).toList();
+
+
+    List<Employee> allEmployees = employeeRepository.findByDepartmentIdIn(deptIds);
+    Map<Long, List<Employee>> employeeMap = allEmployees.stream()
+        .collect(Collectors.groupingBy(e -> e.getDepartment().getId()));
+
+    List<DepartmentResponse> content = departments.stream()
+        .map(dept -> DepartmentResponse.from(dept, employeeMap.getOrDefault(dept.getId(), List.of())))
+        .toList();
+
+
+    return new PageResponse<>(content, departmentPage);
   }
 }

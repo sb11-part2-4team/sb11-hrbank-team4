@@ -13,8 +13,6 @@ public enum ErrorCode {
 
   //예외 던질때 예시 -> throw new BusinessException(ErrorCode.EXAMPLE_EMPLOYEE_ERROR);
 
-
-
   // global
   GLOBAL_DUMMY_ERROR(500, "G001", "예시 메시지"),
 
@@ -25,6 +23,10 @@ public enum ErrorCode {
   EMPLOYEE_INVALID_GROUP_BY(400, "E004", "groupBy는 department 또는 position만 가능합니다."),
   EMPLOYEE_INVALID_TREND_UNIT(400, "E005", "unit은 day, week, month, quarter, year만 가능합니다."),
   EMPLOYEE_INVALID_DATE_RANGE(400, "E006", "from은 to보다 이후일 수 없습니다."),
+  EMPLOYEE_INVALID_SORT_DIRECTION(400, "E007", "sortDirection은 asc 또는 desc만 가능합니다."),
+  EMPLOYEE_INVALID_SORT_FIELD(400, "E008", "sortField는 name, employeeNumber, hireDate만 가능합니다."),
+  EMPLOYEE_CURSOR_ENCODING_FAILED(500, "E009", "직원 목록 커서 생성에 실패했습니다."),
+  EMPLOYEE_INVALID_CURSOR(400, "E010", "유효하지 않은 직원 목록 커서입니다."),
 
   // department
   //EXAMPLE_DEPARTMENT_ERROR(500, "D001", "예시 메시지"),
@@ -39,18 +41,16 @@ public enum ErrorCode {
   FILE_STORAGE_ERROR(500, "F003", "파일 저장 중 오류가 발생했습니다."),
 
   // backup
-  //EXAMPLE_FILE_ERROR(500, "B001", "예시 메시지"),
+  BACKUP_NOT_FOUND(404, "B001", "백업을 찾을 수 없습니다."),
+  BACKUP_NOT_IN_PROGRESS(409, "B002", "백업이 진행 중이어야만 처리할 수 있습니다."),
+  BACKUP_REQUIRED_FILE(500, "B003", "백업 파일이 생성되지 않았습니다."),
 
 
-
-
-  DUMMY_ERROR(500,"G002", "DUMMY");
+  DUMMY_ERROR(500, "G002", "DUMMY");
 
   //
 
 
-
-  
   private final int status;
   private final String code;
   private final String detail;
