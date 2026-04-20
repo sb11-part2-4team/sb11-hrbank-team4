@@ -151,8 +151,9 @@ public class BasicBackupService implements BackupService {
       return "";
     }
 
-    // 따옴표, 줄바꿈, 쉼표 공백으로 처리
+    // 따옴표, 줄바꿈, 쉼표, \r(윈도우 계열 데이터에서 \r이 남을 수 있음)를 공백으로 처리
     value = value.replace("\"", " ");
+    value = value.replace("\r", " ");
     value = value.replace("\n", " ");
     value = value.replace(",", " ");
 
