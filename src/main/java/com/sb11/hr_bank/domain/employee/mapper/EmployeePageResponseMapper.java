@@ -20,7 +20,11 @@ public class EmployeePageResponseMapper {
             Long totalElements,
             boolean hasNext
     ) {
-        List<EmployeeDto> content = employees.stream()
+        List<Employee> pageContent = hasNext
+                ? employees.subList(0, size)
+                : employees;
+
+        List<EmployeeDto> content = pageContent.stream()
                 .map(employeeMapper::toDto)
                 .toList();
 

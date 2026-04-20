@@ -15,12 +15,16 @@ import com.sb11.hr_bank.domain.employee.dto.EmployeeUpdateRequest;
 import com.sb11.hr_bank.domain.employee.entity.Employee;
 import com.sb11.hr_bank.domain.employee.entity.EmployeeStatus;
 import com.sb11.hr_bank.domain.employee.mapper.EmployeeMapper;
+import com.sb11.hr_bank.domain.employee.mapper.EmployeePageResponseMapper;
 import com.sb11.hr_bank.domain.employee.repository.EmployeeRepository;
 import com.sb11.hr_bank.domain.employee.repository.EmployeeSpecifications;
 import com.sb11.hr_bank.domain.file.entity.FileEntity;
+import com.sb11.hr_bank.global.dto.PageResponse;
 import com.sb11.hr_bank.global.exception.BusinessException;
 import com.sb11.hr_bank.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,6 +40,7 @@ public class EmployeeService {
     private final EmployeeRepository employeeRepository;
     private final DepartmentRepository departmentRepository;
     private final EmployeeMapper employeeMapper;
+    private final EmployeePageResponseMapper employeePageResponseMapper;
 
     public EmployeeDto create(EmployeeCreateRequest dto, FileEntity file) {
         if(employeeRepository.findByEmail(dto.email()).isPresent()) {
@@ -76,10 +81,22 @@ public class EmployeeService {
     }
 
     @Transactional(readOnly = true)
-    public List<EmployeeDto> findAllByCondition(EmployeeSearchCondition condition) {
-        return employeeRepository.findAll(EmployeeSpecifications.searchCondition(condition)).stream()
-                .map(employeeMapper::toDto)
-                .toList();
+    public PageResponse<EmployeeDto> findAllByCondition(EmployeeSearchCondition condition) {
+        int size = pageSize(condition);
+
+        Page<Employee> page = employeeRepository.findAll(
+                EmployeeSpecifications.searchCondition(condition),
+                PageRequest.of(0, size + 1)
+        );
+        Long totalElements = employeeRepository.count(EmployeeSpecifications.searchCondition(condition));
+        boolean hasNext = page.getContent().size() > size;
+
+        return employeePageResponseMapper.toPageResponse(
+                page.getContent(),
+                size,
+                totalElements,
+                hasNext
+        );
     }
 
     @Transactional(readOnly = true)
@@ -237,5 +254,13 @@ public class EmployeeService {
             case "year" -> date.plusYears(1);
             default -> throw new BusinessException(ErrorCode.EMPLOYEE_INVALID_TREND_UNIT);
         };
+    }
+
+    private int pageSize(EmployeeSearchCondition condition) {
+        if(condition == null || condition.size() == null || condition.size() <= 0) {
+            return 10;
+        }
+
+        return condition.size();
     }
 }

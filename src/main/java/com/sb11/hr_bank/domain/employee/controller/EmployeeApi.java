@@ -9,6 +9,7 @@ import com.sb11.hr_bank.domain.employee.dto.EmployeeSearchCondition;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeTrendCondition;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeTrendDto;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeUpdateRequest;
+import com.sb11.hr_bank.global.dto.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -30,7 +31,7 @@ public interface EmployeeApi {
     );
 
     @Operation(summary = "직원 목록 조회")
-    ResponseEntity<List<EmployeeDto>> findAll(
+    ResponseEntity<PageResponse<EmployeeDto>> findAll(
             EmployeeSearchCondition condition
     );
 
