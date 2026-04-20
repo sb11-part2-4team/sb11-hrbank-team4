@@ -19,16 +19,18 @@ public interface BackupRepository extends JpaRepository<Backup, Long> {
   @Query("""
       Select b from Backup b
             where
-                  (:worker is null or b.worker like %:worker%)
-                        and(:status is null or b.status = :status)
-                              and(:startFrom is null or b.startedAt >= :startFrom)
-                                    and(:startTo is null or b.startedAt <= :startTo)
-                                          and(:idAfter is null or b.id < :idAfter) /* 2번째 페이지부터는 얘가 조회 이후의 첫번째 조회하도록 도와주는 필터 */
-                                                order by
-                                                      b.startedAt desc,
-                                                            b.id desc
+            (:worker is null or b.worker like %:worker%)
+            and(:status is null or b.status = :status)
+            and(:startFrom is null or b.startedAt >= :startFrom)
+            and(:startTo is null or b.startedAt <= :startTo)
+            and(
+                :cursorStartedAt is null
+                or b.startedAt < :cursorStartedAt
+                or (b.startedAt = :cursorStartedAt and b.id < :cursorId)
+            )
       """)
   Slice<Backup> search(@Param("worker") String worker, @Param("status") BackupStatus status,
       @Param("startFrom") Instant startFrom, @Param("startTo") Instant startTo,
-      @Param("idAfter") Long idAfter, Pageable pageable);
+      @Param("cursorStartedAt") Instant cursorStartedAt, @Param("cursorId") Long cursorId,
+      Pageable pageable);
 }
