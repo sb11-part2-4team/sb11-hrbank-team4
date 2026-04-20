@@ -28,8 +28,10 @@ public interface BackupRepository extends JpaRepository<Backup, Long> {
                 or b.startedAt < :cursorStartedAt
                 or (b.startedAt = :cursorStartedAt and b.id < :cursorId)
             )
+            order by b.startedAt desc, b.id desc
       """)
-  Slice<Backup> search(@Param("worker") String worker, @Param("status") BackupStatus status,
+  Slice<Backup> search(@Param("worker") String worker,
+      @Param("status") BackupStatus status,
       @Param("startFrom") Instant startFrom, @Param("startTo") Instant startTo,
       @Param("cursorStartedAt") Instant cursorStartedAt, @Param("cursorId") Long cursorId,
       Pageable pageable);
