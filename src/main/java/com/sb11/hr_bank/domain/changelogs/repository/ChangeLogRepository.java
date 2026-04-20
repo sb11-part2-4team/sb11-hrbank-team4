@@ -20,14 +20,14 @@ public interface ChangeLogRepository extends JpaRepository<ChangeLog, Long> {
   @Query("""
       SELECT c FROM ChangeLog c
       WHERE c.id < :cursorId
-        AND (:employeeId IS NULL OR c.employee.Id = :employeeId)
-        AND (:memo IS NULL OR c.memo LIKE %:memo%)
+        AND (:employeeId IS NULL OR c.employee.id = :employeeId)
+        AND (:memo IS NULL OR c.memo LIKE CONCAT('%', :memo, '%'))
         AND (:ipAddress IS NULL OR c.ipAddress = :ipAddress)
         AND (:type IS NULL OR c.type = :type)
         AND (CAST(:startDate AS timestamp) IS NULL OR c.createdAt >= :startDate)
         AND (CAST(:endDate AS timestamp) IS NULL OR c.createdAt <= :endDate)
       """)
-    Slice<ChangeLog> findByCursorPaging(
+  Slice<ChangeLog> findByCursorPaging(
       @Param("cursorId") Long cursorId,
       @Param("employeeId") Long employeeId,
       @Param("memo") String memo,
@@ -35,7 +35,7 @@ public interface ChangeLogRepository extends JpaRepository<ChangeLog, Long> {
       @Param("type") ChangeLogType type,
       @Param("startDate") Instant startDate,
       @Param("endDate") Instant endDate,
-    Pageable pageable
+      Pageable pageable
   );
 
 }

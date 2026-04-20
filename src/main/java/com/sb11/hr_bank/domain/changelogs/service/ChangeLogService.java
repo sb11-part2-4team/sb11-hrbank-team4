@@ -115,13 +115,15 @@ public class ChangeLogService {
 
     // 이력 상세 내용 조회
     public ChangeLogResponseDto.DetailInfo getLogDetail(Long changeLogId) {
-      List<ChangeDetailLog> details = changeDetailLogRepository.findByChangeLogId(changeLogId);
-
-      // 조회시 상세 이력 없으면 에러 던지기
-      if (details.isEmpty()) {
+      // ChangeLog 엔티티가 존재하는지 확인, 없으면 에러
+      if (!changeLogRepository.existsById(changeLogId)) {
         throw new BusinessException(ErrorCode.CHANGELOG_NOT_FOUND);
       }
 
+      // ChangeDetailLog 조회, 없으면 빈 리스트
+      List<ChangeDetailLog> details = changeDetailLogRepository.findByChangeLogId(changeLogId);
+
+      // DTO 변환
       List<ChangeLogResponseDto.DetailInfo.DetailItem> detailItems = details.stream()
           .map(detail -> ChangeLogResponseDto.DetailInfo.DetailItem.builder()
               .propertyName(detail.getPropertyName())
@@ -132,7 +134,7 @@ public class ChangeLogService {
 
       return ChangeLogResponseDto.DetailInfo.builder()
           .id(changeLogId)
-          .details(detailItems)
+          .details(detailItems) // 상세 내역 없으면 빈 배열로 JSON 응답
           .build();
     }
 
