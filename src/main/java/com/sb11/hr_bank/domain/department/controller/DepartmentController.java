@@ -4,6 +4,7 @@ import com.sb11.hr_bank.domain.department.dto.DepartmentRequest;
 import com.sb11.hr_bank.domain.department.dto.DepartmentResponse;
 import com.sb11.hr_bank.domain.department.entity.Department;
 import com.sb11.hr_bank.domain.department.service.DepartmentService;
+import com.sb11.hr_bank.global.dto.PageResponse;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ public class DepartmentController implements DepartmentApi {
   private final DepartmentService departmentService; // 작업자인 서비스를 불러옴
 
   // 부서등록
+  @Override
   @PostMapping // 데이터를 새로 저장할 때 사용
   public ResponseEntity<DepartmentResponse> createDepartment(@RequestBody DepartmentRequest request) {
     Department department = Department.builder()
@@ -52,6 +54,7 @@ public class DepartmentController implements DepartmentApi {
   }
 
   // 부서삭제
+  @Override
   @DeleteMapping("/{id}") // 데이터를 삭제할 때 사용
   public ResponseEntity<Void> deleteDepartment(@PathVariable Long id) {
     departmentService.delete(id);
@@ -60,6 +63,7 @@ public class DepartmentController implements DepartmentApi {
   }
 
   // 부서 상세 조회
+  @Override
   @GetMapping("/{id}")
   public ResponseEntity<DepartmentResponse> getDepartmentDetail(@PathVariable Long id) {
     DepartmentResponse response = departmentService.getDepartmentDetail(id);
