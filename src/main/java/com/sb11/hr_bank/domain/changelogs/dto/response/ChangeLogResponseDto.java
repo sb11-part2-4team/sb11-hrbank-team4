@@ -1,4 +1,4 @@
-package com.sb11.hr_bank.domain.changelogs.dto;
+package com.sb11.hr_bank.domain.changelogs.dto.response;
 
 import com.sb11.hr_bank.domain.changelogs.entity.ChangeLogType;
 import lombok.Builder;

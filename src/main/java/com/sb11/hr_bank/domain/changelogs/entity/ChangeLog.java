@@ -21,7 +21,7 @@ public class ChangeLog extends BaseEntity {
   // Employee Entity 연결
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "employee_id", nullable = false)
-  private Employee employeeId;
+  private Employee employee;
 
   // @Enumerated(EnumType.STRING) - DB 확인 후 어노테이션 삭제 + 컨버터 클래스 생성
   @Convert(converter = ChangeLogTypeConverter.class)
@@ -38,8 +38,8 @@ public class ChangeLog extends BaseEntity {
   private List<ChangeDetailLog> details = new ArrayList<>();
 
   @Builder
-  public ChangeLog(Employee employeeId, ChangeLogType type, String memo, String ipAddress) {
-    this.employeeId = employeeId;
+  public ChangeLog(Employee employee, ChangeLogType type, String memo, String ipAddress) {
+    this.employee = employee;
     this.type = type;
     this.memo = memo;
     this.ipAddress = ipAddress;

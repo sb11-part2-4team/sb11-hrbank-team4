@@ -1,4 +1,4 @@
-package com.sb11.hr_bank.domain.changelogs.dto;
+package com.sb11.hr_bank.domain.changelogs.dto.request;
 
 import com.sb11.hr_bank.domain.changelogs.entity.ChangeLogType;
 import lombok.*;
@@ -42,7 +42,8 @@ public class ChangeLogRequestDto {
     // 이전 페이지 마지막 요소 ID (커서)
     private Long lastId;
     // ipAddress or createdAt (기본값)
-    private String sortBy;
+    private String sortBy;        // 정렬 기준
+    private String sortDirection; // 정렬 방향
     private Integer size = 10;
   }
 
