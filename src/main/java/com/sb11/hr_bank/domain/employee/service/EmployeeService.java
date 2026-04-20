@@ -25,6 +25,7 @@ import com.sb11.hr_bank.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -86,7 +87,7 @@ public class EmployeeService {
 
         Page<Employee> page = employeeRepository.findAll(
                 EmployeeSpecifications.searchCondition(condition),
-                PageRequest.of(0, size + 1)
+                PageRequest.of(0, size + 1, sort(condition))
         );
         Long totalElements = employeeRepository.count(EmployeeSpecifications.searchCondition(condition));
         boolean hasNext = page.getContent().size() > size;
@@ -262,5 +263,35 @@ public class EmployeeService {
         }
 
         return condition.size();
+    }
+
+    private Sort sort(EmployeeSearchCondition condition) {
+        Sort.Direction direction = sortDirection(condition);
+
+        return Sort.by(direction, sortField(condition))
+                .and(Sort.by(direction, "id"));
+    }
+
+    private Sort.Direction sortDirection(EmployeeSearchCondition condition) {
+        if(condition == null || condition.sortDirection() == null || condition.sortDirection().isBlank()) {
+            return Sort.Direction.ASC;
+        }
+
+        return switch (condition.sortDirection().toLowerCase()) {
+            case "asc" -> Sort.Direction.ASC;
+            case "desc" -> Sort.Direction.DESC;
+            default -> throw new BusinessException(ErrorCode.EMPLOYEE_INVALID_SORT_DIRECTION);
+        };
+    }
+
+    private String sortField(EmployeeSearchCondition condition) {
+        if(condition == null || condition.sortField() == null || condition.sortField().isBlank()) {
+            return "name";
+        }
+
+        return switch (condition.sortField()) {
+            case "name", "employeeNumber", "hireDate" -> condition.sortField();
+            default -> throw new BusinessException(ErrorCode.EMPLOYEE_INVALID_SORT_FIELD);
+        };
     }
 }
