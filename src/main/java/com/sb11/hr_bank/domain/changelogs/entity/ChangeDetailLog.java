@@ -1,16 +1,16 @@
 package com.sb11.hr_bank.domain.changelogs.entity;
 
+import com.sb11.hr_bank.global.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
+
 
 @Entity
 @Table(name = "change_detail_logs")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class ChangeDetailLog {
+public class ChangeDetailLog extends BaseEntity{
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,8 +22,8 @@ public class ChangeDetailLog {
   private ChangeLog changeLog;
 
   // 어떤 항목이 변경되었는지
-  @Column(name = "column_name", nullable = false, length = 50)
-  private String columnName;
+  @Column(name = "property_name", nullable = false, length = 30)
+  private String propertyName;
 
   // 변경 전 데이터
   @Column(name = "before", columnDefinition = "TEXT")
@@ -34,8 +34,8 @@ public class ChangeDetailLog {
   private String after;
 
   @Builder
-  public ChangeDetailLog(String columnName, String before, String after) {
-    this.columnName = columnName;
+  public ChangeDetailLog(String propertyName, String before, String after) {
+    this.propertyName = propertyName;
     this.before = before;
     this.after = after;
 

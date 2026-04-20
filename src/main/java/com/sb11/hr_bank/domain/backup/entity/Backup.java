@@ -86,6 +86,9 @@ public class Backup extends BaseEntity {
     if (this.status != BackupStatus.IN_PROGRESS) {
       throw new IllegalStateException("진행 중인 백업만 실패 처리할 수 있습니다.");
     }
+    if (logFile == null) {
+      throw new IllegalArgumentException("백업을 완료하였지만 logFile이 생성되지 않았습니다.");
+    }
     this.file = logFile;
     this.status = BackupStatus.FAILED;
     this.endedAt = Instant.now();
