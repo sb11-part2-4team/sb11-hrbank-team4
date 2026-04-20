@@ -20,7 +20,7 @@ public interface ChangeLogRepository extends JpaRepository<ChangeLog, Long> {
   @Query("""
       SELECT c FROM ChangeLog c
       WHERE c.id < :cursorId
-        AND (:employeeId IS NULL OR c.employeeId = :employeeId)
+        AND (:employeeId IS NULL OR c.employee.Id = :employeeId)
         AND (:memo IS NULL OR c.memo LIKE %:memo%)
         AND (:ipAddress IS NULL OR c.ipAddress = :ipAddress)
         AND (:type IS NULL OR c.type = :type)
