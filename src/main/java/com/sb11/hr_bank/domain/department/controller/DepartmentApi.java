@@ -13,10 +13,10 @@ import java.util.List;
 public interface DepartmentApi {
 
   @Operation(summary = "부서 등록")
-  ResponseEntity<Void> createDepartment(@RequestBody DepartmentRequest request);
+  ResponseEntity<DepartmentResponse> createDepartment(@RequestBody DepartmentRequest request);
 
   @Operation(summary = "부서 수정")
-  ResponseEntity<Void> updateDepartment(@PathVariable Long id, @RequestBody DepartmentRequest request);
+  ResponseEntity<DepartmentResponse> updateDepartment(@PathVariable Long id, @RequestBody DepartmentRequest request);
 
   @Operation(summary = "부서 삭제")
   ResponseEntity<Void> deleteDepartment(@PathVariable Long id);
@@ -25,5 +25,5 @@ public interface DepartmentApi {
   ResponseEntity<DepartmentResponse> getDepartmentDetail(@PathVariable Long id);
 
   @Operation(summary = "전체 부서 목록 조회")
-  ResponseEntity<Page<DepartmentResponse>> getAllDepartments(Pageable pageable);
+  ResponseEntity<PageResponse<DepartmentResponse>> getAllDepartments();
 }
