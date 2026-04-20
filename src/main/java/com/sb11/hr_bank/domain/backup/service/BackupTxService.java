@@ -25,6 +25,7 @@ public class BackupTxService {
     return backupRepository.save(backup).getId();
   }
 
+  // 백업 데이터 생성 성공 시
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   public void complete(Long backupId, FileEntity csvFile) {
     Backup backup = backupRepository.findById(backupId).orElseThrow(
@@ -34,13 +35,12 @@ public class BackupTxService {
     backup.complete(csvFile);
   }
 
+  // 백업 실패 시
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   public void fail(Long backupId, FileEntity logFile) {
     Backup backup = backupRepository.findById(backupId).orElseThrow(
         () -> new BusinessException(ErrorCode.BACKUP_NOT_FOUND)
     );
-
-    // TODO 추후 실패시 만들었던 파일 삭제로직 호출하기
 
     backup.fail(logFile);
 

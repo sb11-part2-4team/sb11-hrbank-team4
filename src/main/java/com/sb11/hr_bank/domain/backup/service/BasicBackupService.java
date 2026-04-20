@@ -70,7 +70,7 @@ public class BasicBackupService implements BackupService {
       // 144,EMP-2026-21410784000001,정채원,정채원45@gmail.com,백엔드 개발팀33,테크 리드,2025-09-10,ACTIVE
 
       // 사원 전체 데이터를 호출
-      List<Employee> employees = employeeRepository.findAll();
+      List<Employee> employees = employeeRepository.findAllWithDepartment();
 
       // 직원의 입사일(hireDate)을 YYYY-MM-DD의 형태로 변환
       // YYYY는 목요일을 기준으로 연도가 작년, 내년이 될 수 있음, yyyy는 정상적으로 연도 출력
@@ -115,6 +115,12 @@ public class BasicBackupService implements BackupService {
 
       // 백업 실패(FAILED 상태)
       backupTxService.fail(backupId, file);
+
+      // 백업 최종 실패 시 CSV파일이 남아있을 경우 삭제
+      if (file != null) {
+        // TODO 추후 실패시 만들었던 파일 삭제로직 호출하기
+      }
+
     }
   }
 
