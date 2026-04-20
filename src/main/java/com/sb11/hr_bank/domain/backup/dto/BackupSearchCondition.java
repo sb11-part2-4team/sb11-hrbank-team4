@@ -8,8 +8,12 @@ public record BackupSearchCondition(
     Instant startFrom,
     Instant startTo,
     BackupStatus status,
-    Long cursor,
-    String sortBy
+
+    Long idAfter,
+    String cursor,
+    Integer size,
+    String sortField,
+    String sortDirection
 ) {
 
 }

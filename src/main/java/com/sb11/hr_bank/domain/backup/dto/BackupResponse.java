@@ -20,7 +20,6 @@ public record BackupResponse(
         backup.getStartedAt(),
         backup.getEndedAt(),
         backup.getStatus(),
-//        backup.getFile() != null ? FileResponse.from(backup.getFile()) // 정적 팩토리 메서드로 작성할 시 교체 예정
         backup.getFile() != null ? backup.getFile().getId() : null
     );
   }

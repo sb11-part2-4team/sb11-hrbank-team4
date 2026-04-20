@@ -16,6 +16,7 @@ import com.sb11.hr_bank.global.exception.ErrorCode;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -125,17 +126,55 @@ public class BasicBackupService implements BackupService {
   }
 
   // 백업 목록 조회
+  // 100~1까지 100개 있다고 가정했을 때
+  // 앞에서부터 10개 단위로 조회(DB에는 order by desc), 임시 content 개수는 11개(100~90)
+  // hasNext를 통해 개수를 10개로 줄임(100~91)
+  // last는 10개 중 마지막 번호인 91이 나옴 / nextIdAfter가 실제 91, nextCursor는 91을 base64시킨 문자열
+  // 추후 91보다 작은 id를 order by desc로 조회 -> 90번부터 조회
+  // 임시 content 개수는 11개 ... 반복
   @Override
   @Transactional(readOnly = true)
   public PageResponse<BackupResponse> findAll(BackupSearchCondition condition) {
-    Pageable pageable = PageRequest.of(0, 10);
 
-    Slice<Backup> slice = backupRepository.search(condition, pageable);
+    // 페이지 size의 기본값(default)은 10
+    int size = (condition.size() == null) ? 10 : condition.size();
 
-    Long nextIdAfter = slice.hasNext() ?
-        slice.getContent().get(slice.getNumberOfElements() - 1).getId() : null;
+    // pageable의 개수는 10+1 11개
+    Pageable pageable = PageRequest.of(0, size + 1);
 
-    return PageResponse.fromSlice(slice.map(BackupResponse::from), null, nextIdAfter);
+    // DB 조회 pageable 개수만큼(11개) 조회
+    Slice<Backup> slice = backupRepository.search(
+        condition.worker(),
+        condition.status(),
+        condition.startFrom(),
+        condition.startTo(),
+        condition.idAfter(),
+        pageable
+    );
+
+    // pageable 수만큼, 10+1개 11개를 가져옴
+    List<Backup> content = slice.getContent();
+
+    // 조회 결과 개수 > size이면 true
+    boolean hasNext = slice.hasNext();
+
+    // 0~9번까지 10개
+    if (hasNext) {
+      content = content.subList(0, size);
+    }
+
+    // content가 비면 null(마지막 원소 도달), 그렇지 않으면 마지막 데이터를 가져옴
+    Backup last = content.isEmpty() ? null : content.get(content.size() - 1);
+
+    // nextIdAfter은 마지막 데이터 / 마지막 데이터가 비어있지 않으면 그 데이터의 id를, 비어있으면 null
+    Long nextIdAfter = last != null ? last.getId() : null;
+
+    // nextCursor은 마지막 데이터 / 비어있지않으면 String으로 변환 후 Base64언어로 변환, 비어있으면 null
+    String nextCursor =
+        (last != null) ? Base64.getEncoder().encodeToString(String.valueOf(last.getId()).getBytes())
+            : null;
+
+    return PageResponse.fromSlice(slice.map(BackupResponse::from), nextCursor, nextIdAfter);
   }
 
   // 가장 최근의 백업을 조회(상태별 조회)
