@@ -24,6 +24,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -62,7 +63,7 @@ public class BasicBackupService implements BackupService {
     // 백업 시작(IN_PROGRESS 상태, 트랜잭션)
     Long backupId = backupTxService.createInProgress(worker);
 
-    FileEntity file;
+    FileEntity csvFile = null;
 
     try {
       // 정상적으로 백업 성공
@@ -101,10 +102,10 @@ public class BasicBackupService implements BackupService {
       // CSV 파일로 사원 백업 데이터를 CSV 파일로 변환
       byte[] csvData = sb.toString().getBytes(StandardCharsets.UTF_8);
 
-      file = fileService.saveInternalData("backup_data.csv", "text/csv", csvData);
+      csvFile = fileService.saveInternalData("backup_data.csv", "text/csv", csvData);
 
       // 백업 완료(COMPLETED 상태)
-      backupTxService.complete(backupId, file);
+      backupTxService.complete(backupId, csvFile);
 
     } catch (Exception e) {
       // 백업 실패(FAILED) 상태
@@ -113,14 +114,14 @@ public class BasicBackupService implements BackupService {
       byte[] logData = log.getBytes(StandardCharsets.UTF_8);
 
       // log 파일로 에러 로그 생성
-      file = fileService.saveInternalData("backup_error.log", "text/plain", logData);
+      FileEntity logFile = fileService.saveInternalData("backup_error.log", "text/plain", logData);
 
       // 백업 실패(FAILED 상태)
-      backupTxService.fail(backupId, file);
+      backupTxService.fail(backupId, logFile);
 
       // 백업 최종 실패 시 CSV파일이 남아있을 경우 삭제
-      if (file != null) {
-        fileService.cleanupDummyFile(file.getId());
+      if (csvFile != null) {
+        fileService.cleanupDummyFile(csvFile.getId());
       }
 
     }
@@ -214,8 +215,8 @@ public class BasicBackupService implements BackupService {
 
     // 정렬 방향을 결정(기본값은 DESC)
     // equalsIgnoreCase는 대소문자를 구분하지 않도록 처리하는 메서드("AsC", "asC" 등 동일하게)
-    Sort.Direction direction =
-        "ASC".equalsIgnoreCase(sortDirection) ? Sort.Direction.ASC : Sort.Direction.DESC;
+    Direction direction =
+        "ASC".equalsIgnoreCase(sortDirection) ? Direction.ASC : Direction.DESC;
 
     // 정렬 기준을 설정(기본값은 startedAt)
     // 정렬 기준은 startedAt(시작시간) endedAt(종료시간) status(작업상태)
@@ -228,6 +229,6 @@ public class BasicBackupService implements BackupService {
 
     // 선택한 기준과 방향으로 정렬(Sort.by(정렬 방향, 정렬 속성)
     // 만약 정렬값(시작시간, 종료시간, 상태)이 완전히 같은게 있다면 id가 큰 순서로 정렬(id는 같을 수 없기 때문)
-    return Sort.by(direction, field).and(Sort.by(Sort.Direction.DESC, "id"));
+    return Sort.by(direction, field).and(Sort.by(Direction.DESC, "id"));
   }
 }
