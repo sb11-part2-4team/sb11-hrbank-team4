@@ -3,6 +3,7 @@ package com.sb11.hr_bank.domain.employee.repository;
 import com.sb11.hr_bank.domain.employee.entity.Employee;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -17,4 +18,7 @@ public interface EmployeeRepository
     Long countByHireDateLessThan(LocalDate date);
     boolean existsByDepartmentId(Long departmentId);
     List<Employee> findByDepartmentId(Long departmentId);
+
+    @Query("SELECT e FROM Employee e JOIN FETCH e.department")
+    List<Employee> findAllWithDepartment();
 }

@@ -3,7 +3,6 @@ package com.sb11.hr_bank.domain.employee.entity;
 import com.sb11.hr_bank.domain.department.entity.Department;
 import com.sb11.hr_bank.domain.file.entity.FileEntity;
 import com.sb11.hr_bank.global.base.BaseUpdatableEntity;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -53,7 +52,7 @@ public class Employee extends BaseUpdatableEntity {
     @Column(name = "status", nullable = false, length = 20)
     private EmployeeStatus employeeStatus;
 
-    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.REMOVE, orphanRemoval = true)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "profile_image_id")
     private FileEntity profileImage;
 
