@@ -88,12 +88,12 @@ public class BasicBackupService implements BackupService {
       for (Employee employee : employees) {
         sb.append(employee.getId()).append(",")
             .append(employee.getEmployeeNumber()).append(",")
-            .append(employee.getName()).append(",")
-            .append(employee.getEmail()).append(",")
-            .append(employee.getDepartment().getName()).append(",")
-            .append(employee.getPosition()).append(",")
-            .append(employee.getHireDate().toString()).append(",")
-            .append(employee.getEmployeeStatus().toString()).append("\n");
+            .append(escape(employee.getName())).append(",")
+            .append(escape(employee.getEmail())).append(",")
+            .append(escape(employee.getDepartment().getName())).append(",")
+            .append(escape(employee.getPosition())).append(",")
+            .append(employee.getHireDate().format(formatter)).append(",")
+            .append(employee.getEmployeeStatus()).append("\n");
       }
 
       // CSV 파일로 사원 백업 데이터를 CSV 파일로 변환
@@ -143,5 +143,19 @@ public class BasicBackupService implements BackupService {
         );
 
     return BackupResponse.from(backup);
+  }
+
+  // csv 입력값 특수문자 처리(줄바꿈, 쉼표, 따옴표 등 처리)
+  private String escape(String value) {
+    if (value == null) {
+      return "";
+    }
+
+    // 따옴표, 줄바꿈, 쉼표 공백으로 처리
+    value = value.replace("\"", " ");
+    value = value.replace("\n", " ");
+    value = value.replace(",", " ");
+
+    return value;
   }
 }
