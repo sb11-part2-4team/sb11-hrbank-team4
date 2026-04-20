@@ -94,6 +94,7 @@ public class EmployeeService {
 
         return employeePageResponseMapper.toPageResponse(
                 page.getContent(),
+                condition,
                 size,
                 totalElements,
                 hasNext
