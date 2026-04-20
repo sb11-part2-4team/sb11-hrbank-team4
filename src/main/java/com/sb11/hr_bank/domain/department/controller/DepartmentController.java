@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 
 @RestController // 이 클래스가 외부 요청을 받는곳
-@RequestMapping("/sb/hrbank/api/departments") // Swagger에 명시된 기본 주소를 설정
+@RequestMapping("/api/departments") // Swagger에 명시된 기본 주소를 설정
 @RequiredArgsConstructor // final이 붙은 서비스를 자동으로 연결
 public class DepartmentController implements DepartmentApi {
 

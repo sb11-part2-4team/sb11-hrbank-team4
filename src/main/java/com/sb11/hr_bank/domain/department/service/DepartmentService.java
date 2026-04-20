@@ -99,5 +99,6 @@ public class DepartmentService {
     }).getContent();
 
     return new PageResponse<>(content, departments);
+
   }
 }
