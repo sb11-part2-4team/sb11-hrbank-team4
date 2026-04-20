@@ -4,7 +4,8 @@ import com.sb11.hr_bank.domain.backup.entity.Backup;
 import com.sb11.hr_bank.domain.backup.repository.BackupRepository;
 import com.sb11.hr_bank.domain.file.entity.FileEntity;
 import com.sb11.hr_bank.domain.file.service.FileService;
-import java.util.NoSuchElementException;
+import com.sb11.hr_bank.global.exception.BusinessException;
+import com.sb11.hr_bank.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -27,7 +28,7 @@ public class BackupTxService {
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   public void complete(Long backupId, FileEntity csvFile) {
     Backup backup = backupRepository.findById(backupId).orElseThrow(
-        () -> new NoSuchElementException("존재하지 않는 백업입니다. id : " + backupId)
+        () -> new BusinessException(ErrorCode.BACKUP_NOT_FOUND)
     );
 
     backup.complete(csvFile);
@@ -36,9 +37,11 @@ public class BackupTxService {
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   public void fail(Long backupId, FileEntity logFile) {
     Backup backup = backupRepository.findById(backupId).orElseThrow(
-        () -> new NoSuchElementException("존재하지 않는 백업입니다. id : " + backupId)
+        () -> new BusinessException(ErrorCode.BACKUP_NOT_FOUND)
     );
-    
+
+    // TODO 추후 실패시 만들었던 파일 삭제로직 호출하기
+
     backup.fail(logFile);
 
   }
