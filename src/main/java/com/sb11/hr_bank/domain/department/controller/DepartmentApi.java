@@ -2,8 +2,10 @@ package com.sb11.hr_bank.domain.department.controller;
 
 import com.sb11.hr_bank.domain.department.dto.DepartmentRequest;
 import com.sb11.hr_bank.domain.department.dto.DepartmentResponse;
+import com.sb11.hr_bank.global.dto.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,9 +23,9 @@ public interface DepartmentApi {
   @Operation(summary = "부서 삭제")
   ResponseEntity<Void> deleteDepartment(@PathVariable Long id);
 
-  @Operation(summary = "부서 상세 조회", description = "부서 정보와 함께 소속 직원 수 및 직원 명단을 반환합니다.")
+  @Operation(summary = "부서 상세 조회")
   ResponseEntity<DepartmentResponse> getDepartmentDetail(@PathVariable Long id);
 
   @Operation(summary = "전체 부서 목록 조회")
-  ResponseEntity<PageResponse<DepartmentResponse>> getAllDepartments();
+  ResponseEntity<PageResponse<DepartmentResponse>> getAllDepartments(Pageable pageable); // 파라미터 변경
 }
