@@ -14,6 +14,7 @@ public record EmployeeSearchCondition(
         @Size(max = 100)
         String employeeNumber,
 
+        @Size(max = 20)
         String departmentName,
 
         @Size(max = 100)
