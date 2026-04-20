@@ -122,4 +122,24 @@ public class FileService {
       }
     });
   }
+
+  //더미 파일 정리 메서드(트랙잭션 커밋을 기다리지 않고 로컬 파일 삭제)
+  @Transactional
+  public void cleanupDummyFile(Long id) {
+    FileEntity fileEntity = getFileMetadata(id);
+    Path destPath = getAbsolutePath(fileEntity.getId());
+    
+    //커밋을 기다리지 않고 로컬 파일 삭제
+    try {
+      //로컬 파일 삭제 시도
+      Files.deleteIfExists(destPath);
+      log.info("에러 복구: 롤백 대비 더미 파일 삭제 완료: {}", destPath);
+
+      //로컬 파일 삭제 성공 시 DB 메타데이터 삭제
+      fileRepository.delete(fileEntity);
+    } catch (IOException e) {
+      //에러 발생 시 DB 삭제 코드는 실행 되지 않음
+      log.error("에러 복구: 더미 파일 삭제 실패(수동 확인 필요): {}", destPath, e);
+    }
+  }
 }
