@@ -86,13 +86,13 @@ public class EmployeeController implements EmployeeApi {
     }
 
     @PatchMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Void> update(
+    public ResponseEntity<EmployeeDto> update(
             @PathVariable Long id,
             @Valid @RequestPart("employee") EmployeeUpdateRequest dto,
             @RequestPart(value = "profile", required = false) MultipartFile profile
     ) {
-        employeeService.update(id, dto, profile);
-        return ResponseEntity.ok().build();
+        EmployeeDto result = employeeService.update(id, dto, profile);
+        return ResponseEntity.ok(result);
     }
 
     @DeleteMapping(value = "/{id}")

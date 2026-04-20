@@ -260,7 +260,7 @@ public class EmployeeService {
         return result;
     }
 
-    public void update(Long id, EmployeeUpdateRequest dto, MultipartFile profile) {
+    public EmployeeDto update(Long id, EmployeeUpdateRequest dto, MultipartFile profile) {
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.EMPLOYEE_NOT_FOUND));
 
@@ -291,6 +291,8 @@ public class EmployeeService {
             if(newProfile != null && oldProfile != null) {
                 fileService.deleteFile(oldProfile.getId());
             }
+
+            return employeeMapper.toDto(employee);
         } catch (RuntimeException e) {
             cleanupUploadedFile(newProfile);
             throw e;

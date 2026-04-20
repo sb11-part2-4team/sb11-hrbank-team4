@@ -51,7 +51,7 @@ public interface EmployeeApi {
     );
 
     @Operation(summary = "직원 수정")
-    ResponseEntity<Void> update(
+    ResponseEntity<EmployeeDto> update(
             Long id,
             EmployeeUpdateRequest dto,
             MultipartFile profile
