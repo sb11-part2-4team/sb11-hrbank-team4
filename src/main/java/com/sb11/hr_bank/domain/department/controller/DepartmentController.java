@@ -7,6 +7,7 @@ import com.sb11.hr_bank.domain.department.service.DepartmentService;
 import com.sb11.hr_bank.global.dto.PageResponse;
 import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable; // 추가된 임포트
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -72,11 +73,8 @@ public class DepartmentController implements DepartmentApi {
   // 전체 목록 조회
   @Override
   @GetMapping
-  public ResponseEntity<PageResponse<DepartmentResponse>> getAllDepartments(
-      @RequestParam(value = "page", defaultValue = "0") int page,
-      @RequestParam(value = "size", defaultValue = "10") int size
-  ) {
-    PageResponse<DepartmentResponse> response = departmentService.findAll(page, size);
+  public ResponseEntity<PageResponse<DepartmentResponse>> getAllDepartments(Pageable pageable) {
+    PageResponse<DepartmentResponse> response = departmentService.findAll(pageable);
     return ResponseEntity.ok(response);
   }
 }

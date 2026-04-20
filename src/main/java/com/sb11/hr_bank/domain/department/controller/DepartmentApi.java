@@ -5,6 +5,7 @@ import com.sb11.hr_bank.domain.department.dto.DepartmentResponse;
 import com.sb11.hr_bank.global.dto.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,8 +27,5 @@ public interface DepartmentApi {
   ResponseEntity<DepartmentResponse> getDepartmentDetail(@PathVariable Long id);
 
   @Operation(summary = "전체 부서 목록 조회")
-  ResponseEntity<PageResponse<DepartmentResponse>> getAllDepartments(
-      @RequestParam(value = "page", defaultValue = "0") int page,
-      @RequestParam(value = "size", defaultValue = "10") int size
-  );
+  ResponseEntity<PageResponse<DepartmentResponse>> getAllDepartments(Pageable pageable); // 파라미터 변경
 }

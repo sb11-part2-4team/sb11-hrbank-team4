@@ -8,7 +8,7 @@ import com.sb11.hr_bank.domain.employee.repository.EmployeeRepository;
 import com.sb11.hr_bank.global.dto.PageResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -90,12 +90,13 @@ public class DepartmentService {
 
   // 전체 부서 목록 조회 (페이지네이션 적용)
 
-  public PageResponse<DepartmentResponse> findAll(int page, int size) {
-    PageRequest pageRequest = PageRequest.of(page, size);
-    Page<Department> departmentPage = departmentRepository.findAll(pageRequest);
+  public PageResponse<DepartmentResponse> findAll(Pageable pageable) {
+
+    Page<Department> departmentPage = departmentRepository.findAll(pageable);
 
     List<Department> departments = departmentPage.getContent();
     List<Long> deptIds = departments.stream().map(Department::getId).toList();
+
 
     List<Employee> allEmployees = employeeRepository.findByDepartmentIdIn(deptIds);
     Map<Long, List<Employee>> employeeMap = allEmployees.stream()
@@ -104,6 +105,7 @@ public class DepartmentService {
     List<DepartmentResponse> content = departments.stream()
         .map(dept -> DepartmentResponse.from(dept, employeeMap.getOrDefault(dept.getId(), List.of())))
         .toList();
+
 
     return new PageResponse<>(content, departmentPage);
   }
