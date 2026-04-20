@@ -2,10 +2,15 @@ package com.sb11.hr_bank.domain.employee.repository;
 
 import com.sb11.hr_bank.domain.department.entity.Department;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeCountCondition;
+import com.sb11.hr_bank.domain.employee.dto.EmployeeCursor;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeSearchCondition;
 import com.sb11.hr_bank.domain.employee.entity.Employee;
+import com.sb11.hr_bank.global.exception.BusinessException;
+import com.sb11.hr_bank.global.exception.ErrorCode;
+import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -79,6 +84,29 @@ public class EmployeeSpecifications {
         };
     }
 
+    public static Specification<Employee> cursorCondition(EmployeeCursor cursor) {
+        return (root, query, cb) -> {
+            if(cursor == null || cursor.value() == null || cursor.idAfter() == null) {
+                return cb.conjunction();
+            }
+
+            boolean desc = "DESC".equalsIgnoreCase(cursor.sortDirection());
+            Path<Long> idPath = root.get("id");
+
+            return switch (cursor.sortField()) {
+                case "name", "employeeNumber" -> {
+                    Path<String> path = root.get(cursor.sortField());
+                    yield cursorPredicate(cb, path, cursor.value(), idPath, cursor.idAfter(), desc);
+                }
+                case "hireDate" -> {
+                    Path<LocalDate> path = root.get("hireDate");
+                    yield cursorPredicate(cb, path, LocalDate.parse(cursor.value()), idPath, cursor.idAfter(), desc);
+                }
+                default -> throw new BusinessException(ErrorCode.EMPLOYEE_INVALID_SORT_FIELD);
+            };
+        };
+    }
+
     public static Specification<Employee> countCondition(EmployeeCountCondition condition) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -118,6 +146,25 @@ public class EmployeeSpecifications {
 
     private static String contains(String value) {
         return "%" + value.toLowerCase() + "%";
+    }
+
+    private static <T extends Comparable<? super T>> Predicate cursorPredicate(
+            CriteriaBuilder cb,
+            Path<T> sortPath,
+            T cursorValue,
+            Path<Long> idPath,
+            Long idAfter,
+            boolean desc
+    ) {
+        Predicate sortPredicate = desc
+                ? cb.lessThan(sortPath, cursorValue)
+                : cb.greaterThan(sortPath, cursorValue);
+
+        Predicate idPredicate= desc
+                ? cb.and(cb.equal(sortPath, cursorValue), cb.lessThan(idPath, idAfter))
+                : cb.and(cb.equal(sortPath, cursorValue), cb.greaterThan(idPath, idAfter));
+
+        return cb.or(sortPredicate, idPredicate);
     }
 
 }

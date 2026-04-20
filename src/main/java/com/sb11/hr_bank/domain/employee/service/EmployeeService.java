@@ -1,9 +1,13 @@
 package com.sb11.hr_bank.domain.employee.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sb11.hr_bank.domain.department.entity.Department;
 import com.sb11.hr_bank.domain.department.repository.DepartmentRepository;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeCountCondition;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeCreateRequest;
+import com.sb11.hr_bank.domain.employee.dto.EmployeeCursor;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeDistributionCondition;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeDistributionDto;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeDistributionRow;
@@ -15,18 +19,26 @@ import com.sb11.hr_bank.domain.employee.dto.EmployeeUpdateRequest;
 import com.sb11.hr_bank.domain.employee.entity.Employee;
 import com.sb11.hr_bank.domain.employee.entity.EmployeeStatus;
 import com.sb11.hr_bank.domain.employee.mapper.EmployeeMapper;
+import com.sb11.hr_bank.domain.employee.mapper.EmployeePageResponseMapper;
 import com.sb11.hr_bank.domain.employee.repository.EmployeeRepository;
 import com.sb11.hr_bank.domain.employee.repository.EmployeeSpecifications;
 import com.sb11.hr_bank.domain.file.entity.FileEntity;
+import com.sb11.hr_bank.global.dto.PageResponse;
 import com.sb11.hr_bank.global.exception.BusinessException;
 import com.sb11.hr_bank.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Base64;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +48,8 @@ public class EmployeeService {
     private final EmployeeRepository employeeRepository;
     private final DepartmentRepository departmentRepository;
     private final EmployeeMapper employeeMapper;
+    private final EmployeePageResponseMapper employeePageResponseMapper;
+    private final ObjectMapper objectMapper;
 
     public EmployeeDto create(EmployeeCreateRequest dto, FileEntity file) {
         if(employeeRepository.findByEmail(dto.email()).isPresent()) {
@@ -76,10 +90,28 @@ public class EmployeeService {
     }
 
     @Transactional(readOnly = true)
-    public List<EmployeeDto> findAllByCondition(EmployeeSearchCondition condition) {
-        return employeeRepository.findAll(EmployeeSpecifications.searchCondition(condition)).stream()
-                .map(employeeMapper::toDto)
-                .toList();
+    public PageResponse<EmployeeDto> findAllByCondition(EmployeeSearchCondition condition) {
+        int size = pageSize(condition);
+        EmployeeCursor cursor = decodeCursor(condition);
+
+        Page<Employee> page = employeeRepository.findAll(
+                EmployeeSpecifications.searchCondition(condition)
+                        .and(EmployeeSpecifications.cursorCondition(cursor)),
+                PageRequest.of(0, size + 1, sort(condition))
+        );
+        List<Employee> pageContent = page.getContent();
+        Long totalElements = employeeRepository.count(EmployeeSpecifications.searchCondition(condition));
+        boolean hasNext = pageContent.size() > size;
+        Employee last = lastEmployee(pageContent, size, hasNext);
+
+        return employeePageResponseMapper.toPageResponse(
+                hasNext ? pageContent.subList(0, size) : pageContent,
+                last != null ? encodeCursor(last, condition) : null,
+                last != null ? last.getId() : null,
+                size,
+                totalElements,
+                hasNext
+        );
     }
 
     @Transactional(readOnly = true)
@@ -237,5 +269,103 @@ public class EmployeeService {
             case "year" -> date.plusYears(1);
             default -> throw new BusinessException(ErrorCode.EMPLOYEE_INVALID_TREND_UNIT);
         };
+    }
+
+    private int pageSize(EmployeeSearchCondition condition) {
+        if(condition == null || condition.size() == null || condition.size() <= 0) {
+            return 10;
+        }
+
+        return condition.size();
+    }
+
+    private Sort sort(EmployeeSearchCondition condition) {
+        Sort.Direction direction = sortDirection(condition);
+
+        return Sort.by(direction, sortField(condition))
+                .and(Sort.by(direction, "id"));
+    }
+
+    private Sort.Direction sortDirection(EmployeeSearchCondition condition) {
+        if(condition == null || condition.sortDirection() == null || condition.sortDirection().isBlank()) {
+            return Sort.Direction.ASC;
+        }
+
+        return switch (condition.sortDirection().toLowerCase()) {
+            case "asc" -> Sort.Direction.ASC;
+            case "desc" -> Sort.Direction.DESC;
+            default -> throw new BusinessException(ErrorCode.EMPLOYEE_INVALID_SORT_DIRECTION);
+        };
+    }
+
+    private String sortField(EmployeeSearchCondition condition) {
+        if(condition == null || condition.sortField() == null || condition.sortField().isBlank()) {
+            return "name";
+        }
+
+        return switch (condition.sortField()) {
+            case "name", "employeeNumber", "hireDate" -> condition.sortField();
+            default -> throw new BusinessException(ErrorCode.EMPLOYEE_INVALID_SORT_FIELD);
+        };
+    }
+
+    private Employee lastEmployee(List<Employee> employees, int size, boolean hasNext) {
+        if(!hasNext || employees.isEmpty()) {
+            return null;
+        }
+
+        return employees.get(size - 1);
+    }
+
+    private String encodeCursor(Employee employee, EmployeeSearchCondition condition) {
+        String sortField = sortField(condition);
+
+        Map<String, Object> cursor = new LinkedHashMap<>();
+        cursor.put(sortField, cursorValue(employee, sortField));
+
+        try {
+            byte[] json = objectMapper.writeValueAsBytes(cursor);
+            return Base64.getUrlEncoder().withoutPadding().encodeToString(json);
+        } catch (JsonProcessingException e) {
+            throw new BusinessException(ErrorCode.EMPLOYEE_CURSOR_ENCODING_FAILED);
+        }
+    }
+
+    private String cursorValue(Employee employee, String sortField) {
+        return switch (sortField) {
+            case "name" -> employee.getName();
+            case "employeeNumber" -> employee.getEmployeeNumber();
+            case "hireDate" -> employee.getHireDate().toString();
+            default -> throw new BusinessException(ErrorCode.EMPLOYEE_INVALID_SORT_FIELD);
+        };
+    }
+
+    private EmployeeCursor decodeCursor(EmployeeSearchCondition condition) {
+        if(condition == null || condition.cursor() == null || condition.cursor().isBlank()
+                || condition.idAfter() == null) {
+            return null;
+        }
+
+        String sortField = sortField(condition);
+
+        try {
+            byte[] decoded = Base64.getUrlDecoder().decode(condition.cursor());
+            JsonNode json = objectMapper.readTree(decoded);
+
+            if(!json.hasNonNull(sortField)) {
+                throw new BusinessException(ErrorCode.EMPLOYEE_INVALID_CURSOR);
+            }
+
+            return new EmployeeCursor(
+                    sortField,
+                    json.get(sortField).asText(),
+                    condition.idAfter(),
+                    sortDirection(condition).name()
+            );
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new BusinessException(ErrorCode.EMPLOYEE_INVALID_CURSOR);
+        }
     }
 }

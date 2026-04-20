@@ -12,6 +12,7 @@ import com.sb11.hr_bank.domain.employee.dto.EmployeeUpdateRequest;
 import com.sb11.hr_bank.domain.employee.service.EmployeeService;
 import com.sb11.hr_bank.domain.file.entity.FileEntity;
 import com.sb11.hr_bank.domain.file.service.FileService;
+import com.sb11.hr_bank.global.dto.PageResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -60,10 +61,10 @@ public class EmployeeController implements EmployeeApi {
     }
 
     @GetMapping
-    public ResponseEntity<List<EmployeeDto>> findAll(
+    public ResponseEntity<PageResponse<EmployeeDto>> findAll(
             @ModelAttribute EmployeeSearchCondition condition
     ) {
-        List<EmployeeDto> result = employeeService.findAllByCondition(condition);
+        PageResponse<EmployeeDto> result = employeeService.findAllByCondition(condition);
         return ResponseEntity.ok(result);
     }
 

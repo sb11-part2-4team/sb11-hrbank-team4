@@ -16,6 +16,13 @@ public record EmployeeSearchCondition(
 
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
         LocalDate hireDateTo,
-        EmployeeStatus status
+
+        EmployeeStatus status,
+
+        Long idAfter,
+        String cursor,
+        Integer size,
+        String sortField,
+        String sortDirection
 ) {
 }
