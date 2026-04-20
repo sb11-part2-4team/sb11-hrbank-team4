@@ -13,8 +13,6 @@ public enum ErrorCode {
 
   //예외 던질때 예시 -> throw new BusinessException(ErrorCode.EXAMPLE_EMPLOYEE_ERROR);
 
-
-
   // global
   GLOBAL_DUMMY_ERROR(500, "G001", "예시 메시지"),
 
@@ -38,18 +36,16 @@ public enum ErrorCode {
   FILE_STORAGE_ERROR(500, "F003", "파일 저장 중 오류가 발생했습니다."),
 
   // backup
-  //EXAMPLE_FILE_ERROR(500, "B001", "예시 메시지"),
+  BACKUP_NOT_FOUND(404, "B001", "백업을 찾을 수 없습니다."),
+  BACKUP_NOT_IN_PROGRESS(409, "B002", "백업이 진행 중이어야만 처리할 수 있습니다."),
+  BACKUP_REQUIRED_FILE(500, "B003", "백업 파일이 생성되지 않았습니다."),
 
 
-
-
-  DUMMY_ERROR(500,"G002", "DUMMY");
+  DUMMY_ERROR(500, "G002", "DUMMY");
 
   //
 
 
-
-  
   private final int status;
   private final String code;
   private final String detail;
