@@ -23,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -139,8 +140,11 @@ public class BasicBackupService implements BackupService {
     // 페이지 size의 기본값(default)은 10
     int size = (condition.size() == null) ? 10 : condition.size();
 
+    // 정렬 방향과 정렬 기준을 설정(메서드 분리)
+    Sort sort = buildSort(condition.sortField(), condition.sortDirection());
+
     // pageable의 개수는 10+1 11개
-    Pageable pageable = PageRequest.of(0, size + 1);
+    Pageable pageable = PageRequest.of(0, size + 1, sort);
 
     // DB 조회 pageable 개수만큼(11개) 조회
     Slice<Backup> slice = backupRepository.search(
@@ -203,5 +207,27 @@ public class BasicBackupService implements BackupService {
     value = value.replace(",", " ");
 
     return value;
+  }
+
+  // sortField와 sortDirection 처리 메서드
+  private Sort buildSort(String sortField, String sortDirection) {
+
+    // 정렬 방향을 결정(기본값은 DESC)
+    // equalsIgnoreCase는 대소문자를 구분하지 않도록 처리하는 메서드("AsC", "asC" 등 동일하게)
+    Sort.Direction direction =
+        "ASC".equalsIgnoreCase(sortDirection) ? Sort.Direction.ASC : Sort.Direction.DESC;
+
+    // 정렬 기준을 설정(기본값은 startedAt)
+    // 정렬 기준은 startedAt(시작시간) endedAt(종료시간) status(작업상태)
+    // endedAt, status가 아닌 다른 값이 들어오면 startedAt로 설정
+    String field = switch (sortField == null ? "startedAt" : sortField) {
+      case "endedAt" -> "endedAt";
+      case "status" -> "status";
+      default -> "startedAt";
+    };
+
+    // 선택한 기준과 방향으로 정렬(Sort.by(정렬 방향, 정렬 속성)
+    // 만약 정렬값(시작시간, 종료시간, 상태)이 완전히 같은게 있다면 id가 큰 순서로 정렬(id는 같을 수 없기 때문)
+    return Sort.by(direction, field).and(Sort.by(Sort.Direction.DESC, "id"));
   }
 }
