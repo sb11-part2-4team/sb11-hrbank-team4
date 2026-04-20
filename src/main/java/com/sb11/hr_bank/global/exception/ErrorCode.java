@@ -19,7 +19,12 @@ public enum ErrorCode {
   GLOBAL_DUMMY_ERROR(500, "G001", "예시 메시지"),
 
   // employee
-  //EXAMPLE_EMPLOYEE_ERROR(500, "E001", "예시 메시지"),
+  EMPLOYEE_NOT_FOUND(404, "E001", "직원을 찾을 수 없습니다."),
+  EMPLOYEE_DUPLICATE_EMAIL(409, "E002", "이미 사용 중인 이메일입니다."),
+  EMPLOYEE_DEPARTMENT_NOT_FOUND(404, "E003", "부서를 찾을 수 없습니다."),
+  EMPLOYEE_INVALID_GROUP_BY(400, "E004", "groupBy는 department 또는 position만 가능합니다."),
+  EMPLOYEE_INVALID_TREND_UNIT(400, "E005", "unit은 day, week, month, quarter, year만 가능합니다."),
+  EMPLOYEE_INVALID_DATE_RANGE(400, "E006", "from은 to보다 이후일 수 없습니다."),
 
   // department
   //EXAMPLE_DEPARTMENT_ERROR(500, "D001", "예시 메시지"),
@@ -28,7 +33,9 @@ public enum ErrorCode {
   //EXAMPLE_DEPARTMENT_ERROR(500, "C001", "예시 메시지"),
 
   // file
-  //EXAMPLE_FILE_ERROR(500, "F001", "예시 메시지"),
+  FILE_EMPTY(400, "F001", "업로드 된 파일이 없습니다."),
+  FILE_NOT_FOUND(404, "F002", "해당 ID의 파일을 찾을 수 없습니다."),
+  FILE_STORAGE_ERROR(500, "F003", "파일 저장 중 오류가 발생했습니다."),
 
   // backup
   //EXAMPLE_FILE_ERROR(500, "B001", "예시 메시지"),

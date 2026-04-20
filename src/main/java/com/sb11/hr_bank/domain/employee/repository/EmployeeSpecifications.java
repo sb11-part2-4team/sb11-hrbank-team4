@@ -9,7 +9,6 @@ import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -88,19 +87,17 @@ public class EmployeeSpecifications {
                 return cb.conjunction();
             }
 
-            LocalDate toDate = condition.toDate() != null
-                    ? condition.toDate()
-                    : LocalDate.now();
-
             if(condition.fromDate() != null) {
                 predicates.add(cb.greaterThanOrEqualTo(
                         root.get("hireDate"),
                         condition.fromDate()
                 ));
+            }
 
+            if(condition.toDate() != null) {
                 predicates.add(cb.lessThanOrEqualTo(
                         root.get("hireDate"),
-                        toDate
+                        condition.toDate()
                 ));
             }
 
