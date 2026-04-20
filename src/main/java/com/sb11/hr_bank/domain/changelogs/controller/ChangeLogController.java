@@ -9,12 +9,17 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.Arrays;
+import java.util.Set;
+
 
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/changelogs")
 public class ChangeLogController {
+
+  private static final Set<String> TRUSTED_PROXIES = Set.of("127.0.0.1", "0:0:0:0:0:0:0:1", "::1");
 
   private final ChangeLogService changeLogService;
 
@@ -52,15 +57,21 @@ public class ChangeLogController {
 
   // IP 추출을 위한 Private Helper Method
   private String getClientIp(HttpServletRequest httpRequest) {
-    String ip = httpRequest.getHeader("X-Forwarded-For");
-    if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-      ip = httpRequest.getRemoteAddr();
+
+    String remoteAddr = httpRequest.getRemoteAddr();
+    String forwardedFor = httpRequest.getHeader("X-Forwarded-For");
+
+    // 신뢰 가능 프록시에서 온 요청일 때만 X-Forwarded-For 사용
+    if (!TRUSTED_PROXIES.contains(remoteAddr) || forwardedFor == null || forwardedFor.isBlank()) {
+      return remoteAddr;
     }
-    // X-Forwarded-For가 여러 IP를 쉼표로 구분 해서 보낼 경우, 첫번째(진짜 클라이언트 IP)만 가져옴
-    if (ip != null && ip.contains(",")) {
-      ip = ip.split(",")[0].trim();
-    }
-    return ip;
+
+    return Arrays.stream(forwardedFor.split(","))
+        .map(String::trim)
+        .filter(token -> !token.isEmpty())
+        .filter(token -> !"unknown".equalsIgnoreCase(token))
+        .findFirst()
+        .orElse(remoteAddr);
   }
 
 }
