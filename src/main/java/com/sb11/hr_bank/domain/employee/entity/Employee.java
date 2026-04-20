@@ -35,7 +35,7 @@ public class Employee extends BaseUpdatableEntity {
     @Column(nullable = false, unique = true, length = 100)
     private String email;
 
-    @Column(name = "employee_number", nullable = false, length = 100)
+    @Column(name = "employee_number", nullable = false, unique = true, length = 100)
     private String employeeNumber;
 
     @ManyToOne(fetch = FetchType.LAZY)

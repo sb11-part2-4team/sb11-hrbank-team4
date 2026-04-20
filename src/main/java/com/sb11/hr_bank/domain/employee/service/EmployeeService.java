@@ -65,11 +65,11 @@ public class EmployeeService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.EMPLOYEE_DEPARTMENT_NOT_FOUND));
 
         LocalDate hireDate = dto.hireDate();
-        long count = employeeRepository.countByHireDateBetween(
-                LocalDate.of(hireDate.getYear(), 1, 1),
-                LocalDate.of(hireDate.getYear(), 12, 31)
-        );
-        String employeeNumber = String.format("EMP-%d-%03d", hireDate.getYear(), count + 1);
+        int year = hireDate.getYear();
+        int nextSequence = employeeRepository.findMaxEmployeeNumberByYear(year)
+                .map(employeeNumber -> Integer.parseInt(employeeNumber.substring(employeeNumber.lastIndexOf("-") + 1)) + 1)
+                .orElse(1);
+        String employeeNumber = String.format("EMP-%d-%03d", hireDate.getYear(), nextSequence);
 
         FileEntity file = uploadProfileIfPresent(profile);
         try {
