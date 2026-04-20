@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS employees
     updated_at       TIMESTAMPTZ,
     name             VARCHAR(20)                           NOT NULL,
     email            VARCHAR(100)                          NOT NULL UNIQUE,
-    employee_number  VARCHAR(100)                          NOT NULL,
+    employee_number  VARCHAR(100)                          NOT NULL UNIQUE,
     department_id    BIGINT                                NOT NULL,
     position         VARCHAR(100)                          NOT NULL,
     hire_date        DATE                                  NOT NULL,

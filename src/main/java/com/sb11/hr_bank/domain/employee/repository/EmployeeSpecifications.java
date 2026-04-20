@@ -14,6 +14,7 @@ import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,6 +23,10 @@ public class EmployeeSpecifications {
     public static Specification<Employee> searchCondition(EmployeeSearchCondition condition) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
+
+            if(query != null && query.getResultType() != Long.class && query.getResultType() != long.class) {
+                root.fetch("department", JoinType.LEFT);
+            }
 
             if(condition == null) {
                 return cb.conjunction();
@@ -145,7 +150,7 @@ public class EmployeeSpecifications {
     }
 
     private static String contains(String value) {
-        return "%" + value.toLowerCase() + "%";
+        return "%" + value.trim().toLowerCase() + "%";
     }
 
     private static <T extends Comparable<? super T>> Predicate cursorPredicate(
