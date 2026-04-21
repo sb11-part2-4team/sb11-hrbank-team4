@@ -2,7 +2,6 @@ package com.sb11.hr_bank.domain.backup.dto;
 
 import com.sb11.hr_bank.domain.backup.entity.Backup;
 import com.sb11.hr_bank.domain.backup.entity.BackupStatus;
-import com.sb11.hr_bank.domain.file.dto.FileResponse;
 import java.time.Instant;
 
 public record BackupResponse(
@@ -11,7 +10,7 @@ public record BackupResponse(
     Instant startedAt,
     Instant endedAt,
     BackupStatus status,
-    FileResponse file
+    Long fileId
 ) {
 
   public static BackupResponse from(Backup backup) {
@@ -21,11 +20,7 @@ public record BackupResponse(
         backup.getStartedAt(),
         backup.getEndedAt(),
         backup.getStatus(),
-//        backup.getFile() != null ? FileResponse.from(backup.getFile()) // 정적 팩토리 메서드로 작성할 시 교체 예정
-        backup.getFile() != null ?
-            new FileResponse(backup.getFile().getId(),
-                backup.getFile().getName(), backup.getFile().getContentType(),
-                backup.getFile().getSize()) : null
+        backup.getFile() != null ? backup.getFile().getId() : null
     );
   }
 }
