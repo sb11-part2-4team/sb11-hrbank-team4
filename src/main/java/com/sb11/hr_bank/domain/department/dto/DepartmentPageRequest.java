@@ -6,37 +6,38 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
-@Schema(description = "부서 목록 조회 및 검색 요청")
+@Schema(description = "부서 목록 커서 기반 페이징 및 검색 요청")
 public record DepartmentPageRequest(
-    @Schema(description = "페이지 번호 (1부터 시작)", defaultValue = "1")
-    @Min(value = 1, message = "페이지 번호는 1 이상이어야 합니다.")
-    Integer page,
 
-    @Schema(description = "페이지 크기", defaultValue = "10")
+    @Schema(description = "부서 이름 또는 설명", type = "string")
+    String nameOrDescription,
+
+    @Schema(description = "이전 페이지 마지막 요소 ID", type = "integer", format = "int64")
+    Long idAfter,
+
+    @Schema(description = "커서 (다음 페이지 시작점)", type = "string")
+    String cursor,
+
+    @Schema(description = "페이지 크기 (기본값: 10)", type = "integer", format = "int32", defaultValue = "10")
     @Min(value = 1, message = "페이지 크기는 1 이상이어야 합니다.")
     Integer size,
 
-    @Schema(description = "정렬 기준 필드", example = "id")
-    String sortBy,
+    @Schema(description = "정렬 필드 (name 또는 establishedDate)", type = "string", defaultValue = "establishedDate")
+    String sortField,
 
-    @Schema(description = "정렬 방향 (ASC/DESC)", example = "DESC")
-    String direction,
-
-    @Schema(description = "검색어 (부서명)", example = "개발")
-    String searchName
+    @Schema(description = "정렬 방향 (asc 또는 desc, 기본값: asc)", type = "string", defaultValue = "asc")
+    String sortDirection
 ) {
 
   public Pageable toPageable() {
-    int pageNumber = (page != null && page > 0) ? page - 1 : 0;
-    int pageSize = (size != null && size > 0) ? size : 10;
+    int limitSize = (size != null && size > 0) ? size : 10;
 
-    Sort sort = Sort.by(Sort.Direction.DESC, "id");
+    // 명세서 기준 정렬 방향 (기본값: asc)
+    Sort.Direction direction = "desc".equalsIgnoreCase(sortDirection) ? Sort.Direction.DESC : Sort.Direction.ASC;
 
-    if (sortBy != null && !sortBy.isBlank()) {
-      Sort.Direction sortDirection = "ASC".equalsIgnoreCase(direction) ? Sort.Direction.ASC : Sort.Direction.DESC;
-      sort = Sort.by(sortDirection, sortBy);
-    }
+    // 명세서 기준 정렬 필드 (기본값: establishedDate)
+    String field = (sortField != null && sortField.equals("name")) ? "name" : "establishedDate";
 
-    return PageRequest.of(pageNumber, pageSize, sort);
+    return PageRequest.of(0, limitSize, Sort.by(direction, field));
   }
 }

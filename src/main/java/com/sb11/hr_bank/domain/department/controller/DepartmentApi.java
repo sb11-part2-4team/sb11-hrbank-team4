@@ -52,6 +52,6 @@ public interface DepartmentApi {
   @Operation(summary = "전체 부서 목록 조회", description = "페이징 처리된 전체 부서 목록을 조회합니다.")
   @ApiResponse(responseCode = "200", description = "전체 부서 목록 조회 성공")
   @GetMapping
-    // Pageable 대신 커스텀 DTO인 DepartmentPageRequest를 @ModelAttribute로 받음
+
   ResponseEntity<PageResponse<DepartmentResponse>> getAllDepartments(@Valid @ModelAttribute DepartmentPageRequest request);
 }

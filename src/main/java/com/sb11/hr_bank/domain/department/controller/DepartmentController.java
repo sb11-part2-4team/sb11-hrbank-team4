@@ -70,12 +70,16 @@ public class DepartmentController implements DepartmentApi {
     return ResponseEntity.ok(response);
   }
 
-  // 전체 목록 조회
+  // 전체 목록 조회 (커서 페이징 방식 적용)
   @Override
   @GetMapping
   public ResponseEntity<PageResponse<DepartmentResponse>> getAllDepartments(@Valid @ModelAttribute DepartmentPageRequest request) {
-    // DTO 내부의 변환 메서드를 통해 안전하게 Pageable을 생성
     Pageable pageable = request.toPageable();
-    return ResponseEntity.ok(departmentService.findAll(pageable));
+    // DTO에서 추출한 커서 및 검색어 데이터를 서비스로 전달
+    return ResponseEntity.ok(departmentService.findAll(
+        pageable,
+        request.nameOrDescription(),
+        request.idAfter()
+    ));
   }
 }
