@@ -47,6 +47,9 @@ public enum ErrorCode {
   BACKUP_NOT_FOUND(404, "B001", "백업을 찾을 수 없습니다."),
   BACKUP_NOT_IN_PROGRESS(409, "B002", "백업이 진행 중이어야만 처리할 수 있습니다."),
   BACKUP_REQUIRED_FILE(500, "B003", "백업 파일이 생성되지 않았습니다."),
+  BACKUP_INVALID_STATUS(400, "B004", "유효하지 않은 백업 상태입니다."),
+  BACKUP_CURSOR_ENCODE_FAILED(500, "B005", "커서 인코딩에 실패했습니다."),
+  BACKUP_CURSOR_DECODE_FAILED(500, "B006", "커서 디코딩에 실패했습니다."),
 
 
   DUMMY_ERROR(500, "G002", "DUMMY");

@@ -2,6 +2,8 @@ package com.sb11.hr_bank.domain.backup.entity;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
+import com.sb11.hr_bank.global.exception.BusinessException;
+import com.sb11.hr_bank.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
@@ -18,7 +20,7 @@ public enum BackupStatus {
         return status;
       }
     }
-    throw new IllegalArgumentException("Invalid BackupStatus description: " + description);
+    throw new BusinessException(ErrorCode.BACKUP_INVALID_STATUS);
   }
 
   // 직렬화(영어 -> 한글 / 예시 : IN_PROGRESS 프론트에서는 "진행중")
