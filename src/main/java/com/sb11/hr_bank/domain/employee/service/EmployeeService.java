@@ -327,7 +327,7 @@ public class EmployeeService {
             addDetailIfChanged(details, "고용일", beforeHireDate, employee.getHireDate().toString());
             addDetailIfChanged(details, "상태", beforeStatus, employee.getEmployeeStatus().getLabel());
             addDetailIfChanged(details, "프로필", beforeProfileId, profileIdText(employee.getProfileImage()));
-            createChangeLog(employee, ChangeLogType.UPDATE, dto.memo(), details);
+            if(!details.isEmpty()) createChangeLog(employee, ChangeLogType.UPDATE, dto.memo(), details);
 
             return employeeMapper.toDto(employee);
         } catch (RuntimeException e) {
