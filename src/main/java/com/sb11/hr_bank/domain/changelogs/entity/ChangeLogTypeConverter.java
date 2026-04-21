@@ -11,7 +11,7 @@ import java.util.Arrays;
 // JPA가 AttributeConverter를 제공해서 ChangeLogType과 String 통역 가능
 public class ChangeLogTypeConverter implements AttributeConverter<ChangeLogType, String> {
 
-  // TODO : ADD, UPDATE, DELETE 를 직원 추가, 정보 수정, 직원 삭제 로 변환 코드 작성
+  // TODO : CREATE, UPDATE, DELETE 를 직원 추가, 정보 수정, 직원 삭제 로 변환 코드 작성
 
   // Enum -> DB(String) 저장, DB에 INSERT/UPDATE 할 때 자동 실행
   @Override

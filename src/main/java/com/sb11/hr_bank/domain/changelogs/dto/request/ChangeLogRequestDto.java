@@ -7,6 +7,8 @@ import java.time.Instant;
 import java.util.List;
 
 public class ChangeLogRequestDto {
+
+
   // 생성 요청 DTO
   @Getter
   @Builder
@@ -29,23 +31,25 @@ public class ChangeLogRequestDto {
     }
   }
 
+
   // 검색 요청 DTO + 커서 페이징
   @Getter @Setter
   public static class Search {
-    private Long employeeId;
+    private String employeeNumber;
+    private ChangeLogType type;
     private String memo;
     private String ipAddress;
-    private ChangeLogType type;
-    private Instant startDate;
-    private Instant endDate;
+    private Instant atForm;
+    private Instant atTo;
 
     // 이전 페이지 마지막 요소 ID (커서)
-    private Long lastId;
-    // ipAddress or createdAt (기본값)
-    private String sortBy;        // 정렬 기준
-    private String sortDirection; // 정렬 방향
-    private Integer size = 10;
-  }
+    private Long idAfter;
+    private String cursor;    // cursor or idAfter 둘 다받아서 서비스에서 처리
 
+    private Integer size = 10;
+    private String sortField = "at";
+    private String sortDirection = "desc";
+
+  }
 
 }

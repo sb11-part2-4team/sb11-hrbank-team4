@@ -22,6 +22,8 @@ public class ChangeDetailLog extends BaseEntity{
   private ChangeLog changeLog;
 
   // 어떤 항목이 변경되었는지
+  // 컨버터 적용
+  @Convert(converter = ChangePropertyConverter.class)
   @Column(name = "property_name", nullable = false, length = 30)
   private String propertyName;
 

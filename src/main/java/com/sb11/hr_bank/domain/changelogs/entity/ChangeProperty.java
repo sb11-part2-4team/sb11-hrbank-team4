@@ -5,10 +5,14 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-public enum ChangeLogType {
-  CREATE("직원 추가"),
-  UPDATE("정보 수정"),
-  DELETE("직원 삭제");
+public enum ChangeProperty {
+  NAME("이름"),
+  EMAIL("이메일"),
+  DEPARTMENT("부서"),
+  POSITION("직함"),
+  HIRE_DATE("고용일"),
+  STATUS("상태"),
+  PROFILE("프로필");
 
   private final String description;
 }
