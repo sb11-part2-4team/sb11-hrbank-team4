@@ -18,4 +18,16 @@ public record BackupSearchCondition(
 
 ) {
 
+  public BackupSearchCondition from(BackupCursor cursor) {
+    return new BackupSearchCondition(
+        worker,
+        startFrom,
+        startTo,
+        status,
+        cursor,
+        size,
+        sortField,
+        sortDirection
+    );
+  }
 }

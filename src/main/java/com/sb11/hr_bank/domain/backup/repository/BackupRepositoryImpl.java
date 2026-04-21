@@ -4,6 +4,7 @@ import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import com.sb11.hr_bank.domain.backup.dto.BackupCursor;
 import com.sb11.hr_bank.domain.backup.dto.BackupSearchCondition;
 import com.sb11.hr_bank.domain.backup.entity.Backup;
 import com.sb11.hr_bank.domain.backup.entity.BackupStatus;
@@ -81,7 +82,9 @@ public class BackupRepositoryImpl implements BackupRepositoryCustom {
 
   // 커서
   private BooleanExpression applyCursor(BackupSearchCondition condition) {
-    if (condition.cursorId() == null) {
+
+    BackupCursor cursor = condition.cursor();
+    if (cursor == null) {
       return null;
     }
 
@@ -90,34 +93,34 @@ public class BackupRepositoryImpl implements BackupRepositoryCustom {
     return switch (condition.sortField()) {
 
       case STARTED_AT -> isAsc
-          ? b.startedAt.gt(condition.cursorStartedAt())
+          ? b.startedAt.gt(cursor.startedAt())
           .or
-              (b.startedAt.eq(condition.cursorStartedAt())
-                  .and(b.id.gt(condition.cursorId())))
-          : b.startedAt.lt(condition.cursorStartedAt())
+              (b.startedAt.eq(cursor.startedAt())
+                  .and(b.id.gt(cursor.id())))
+          : b.startedAt.lt(cursor.startedAt())
               .or
-                  (b.startedAt.eq(condition.cursorStartedAt())
-                      .and(b.id.lt(condition.cursorId())));
+                  (b.startedAt.eq(cursor.startedAt())
+                      .and(b.id.lt(cursor.id())));
 
       case ENDED_AT -> isAsc
-          ? b.endedAt.gt(condition.cursorEndedAt())
+          ? b.endedAt.gt(cursor.endedAt())
           .or
-              (b.endedAt.eq(condition.cursorEndedAt())
-                  .and(b.id.gt(condition.cursorId())))
-          : b.endedAt.lt(condition.cursorEndedAt())
+              (b.endedAt.eq(cursor.endedAt())
+                  .and(b.id.gt(cursor.id())))
+          : b.endedAt.lt(cursor.endedAt())
               .or
-                  (b.endedAt.eq(condition.cursorEndedAt())
-                      .and(b.id.lt(condition.cursorId())));
+                  (b.endedAt.eq(cursor.endedAt())
+                      .and(b.id.lt(cursor.id())));
 
       case STATUS -> isAsc
-          ? b.status.gt(condition.cursorStatus())
+          ? b.status.gt(cursor.status())
           .or
-              (b.status.eq(condition.cursorStatus())
-                  .and(b.id.gt(condition.cursorId())))
-          : b.status.lt(condition.cursorStatus())
+              (b.status.eq(cursor.status())
+                  .and(b.id.gt(cursor.id())))
+          : b.status.lt(cursor.status())
               .or
-                  (b.status.eq(condition.cursorStatus())
-                      .and(b.id.lt(condition.cursorId())));
+                  (b.status.eq(cursor.status())
+                      .and(b.id.lt(cursor.id())));
     };
   }
 
