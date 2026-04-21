@@ -1,5 +1,6 @@
 package com.sb11.hr_bank.domain.backup.controller;
 
+import com.sb11.hr_bank.domain.backup.dto.BackupCursor;
 import com.sb11.hr_bank.domain.backup.dto.BackupResponse;
 import com.sb11.hr_bank.domain.backup.dto.BackupSearchCondition;
 import com.sb11.hr_bank.domain.backup.entity.BackupStatus;
@@ -25,10 +26,15 @@ public class BackupController {
   // 데이터 백업 목록 조회
   @GetMapping
   public ResponseEntity<PageResponse<BackupResponse>> findAll(
+      @RequestParam(required = false) String cursor,
       @ModelAttribute BackupSearchCondition condition
   ) {
+    BackupCursor decodedCursor = backupService.decodeCursor(cursor);
+
+    BackupSearchCondition newCondition = condition.from(decodedCursor);
+
     return ResponseEntity.ok(
-        backupService.findAll(condition));
+        backupService.findAll(newCondition));
   }
 
   // 데이터 백업 생성

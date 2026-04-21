@@ -1,5 +1,7 @@
 package com.sb11.hr_bank.domain.backup.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sb11.hr_bank.domain.backup.dto.BackupCursor;
 import com.sb11.hr_bank.domain.backup.dto.BackupResponse;
 import com.sb11.hr_bank.domain.backup.dto.BackupSearchCondition;
 import com.sb11.hr_bank.domain.backup.entity.Backup;
@@ -16,6 +18,7 @@ import com.sb11.hr_bank.global.exception.ErrorCode;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +38,8 @@ public class BasicBackupService implements BackupService {
 
   private final FileService fileService;
   private final BackupTxService backupTxService;
+
+  private final ObjectMapper objectMapper;
 
 
   @Override
@@ -151,11 +156,15 @@ public class BasicBackupService implements BackupService {
     String nextCursor = null;
 
     if (last != null) {
-      switch (condition.sortField()) {
-        case STARTED_AT -> nextCursor = last.getStartedAt() + "|" + last.getId();
-        case ENDED_AT -> nextCursor = last.getEndedAt() + "|" + last.getId();
-        case STATUS -> nextCursor = last.getStatus() + "|" + last.getId();
-      }
+      BackupCursor cursor = new BackupCursor(
+          last.getStartedAt(),
+          last.getEndedAt(),
+          last.getStatus(),
+          last.getId()
+      );
+
+      // nextCursor를 Base64로 인코딩
+      nextCursor = encodeCursor(cursor);
     }
 
     // DTO 변환
@@ -197,26 +206,32 @@ public class BasicBackupService implements BackupService {
 
     return value;
   }
-//
-//  // sortField와 sortDirection 처리 메서드
-//  private Sort buildSort(String sortField, String sortDirection) {
-//
-//    // 정렬 방향을 결정(기본값은 DESC)
-//    // equalsIgnoreCase는 대소문자를 구분하지 않도록 처리하는 메서드("AsC", "asC" 등 동일하게)
-//    Direction direction =
-//        "ASC".equalsIgnoreCase(sortDirection) ? Direction.ASC : Direction.DESC;
-//
-//    // 정렬 기준을 설정(기본값은 startedAt)
-//    // 정렬 기준은 startedAt(시작시간) endedAt(종료시간) status(작업상태)
-//    // endedAt, status가 아닌 다른 값이 들어오면 startedAt로 설정
-//    String field = switch (sortField == null ? "startedAt" : sortField) {
-//      case "endedAt" -> "endedAt";
-//      case "status" -> "status";
-//      default -> "startedAt";
-//    };
-//
-//    // 선택한 기준과 방향으로 정렬(Sort.by(정렬 방향, 정렬 속성)
-//    // 만약 정렬값(시작시간, 종료시간, 상태)이 완전히 같은게 있다면 id가 큰 순서로 정렬(id는 같을 수 없기 때문)
-//    return Sort.by(direction, field).and(Sort.by(direction, "id"));
-//  }
+
+  private String encodeCursor(BackupCursor cursor) {
+    if (cursor == null) {
+      return null;
+    }
+
+    try {
+      String json = objectMapper.writeValueAsString(cursor);
+      return Base64.getEncoder().encodeToString(json.getBytes(StandardCharsets.UTF_8));
+    } catch (Exception e) {
+      throw new RuntimeException("Cursor encode 실패");
+    }
+  }
+
+  @Override
+  public BackupCursor decodeCursor(String cursor) {
+    if (cursor == null) {
+      return null;
+    }
+
+    try {
+      String json = new String(Base64.getDecoder().decode(cursor), StandardCharsets.UTF_8);
+
+      return objectMapper.readValue(json, BackupCursor.class);
+    } catch (Exception e) {
+      throw new RuntimeException("Cursor decode 실패");
+    }
+  }
 }
