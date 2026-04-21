@@ -3,6 +3,8 @@ package com.sb11.hr_bank.domain.file.entity;
 import com.sb11.hr_bank.global.base.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -31,9 +33,14 @@ public class FileEntity extends BaseEntity {
   @Column(nullable = false)
   private Long size;
 
-  public FileEntity(String name, String contentType, Long size) {
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 20)
+  private FileStatus status;
+
+  public FileEntity(String name, String contentType, Long size, FileStatus status) {
     this.name = name;
     this.contentType = contentType;
     this.size = size;
+    this.status = status;
   }
 }
