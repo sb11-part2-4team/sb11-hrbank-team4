@@ -13,7 +13,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "files")
+@Table(name = "file_entities")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class FileEntity extends BaseEntity {
