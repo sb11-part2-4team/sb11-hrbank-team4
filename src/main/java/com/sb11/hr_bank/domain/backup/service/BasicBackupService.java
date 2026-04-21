@@ -38,7 +38,7 @@ public class BasicBackupService implements BackupService {
 
 
   @Override
-  public void startBackup(String worker) {
+  public BackupResponse startBackup(String worker) {
     // 가장 최근 백업 시간을 가져옴, 백업이 없을 경우 Optional.empty
     Optional<Instant> lastBackupTime =
         backupRepository.findTopByStatusOrderByEndedAtDesc(BackupStatus.COMPLETED)
@@ -54,7 +54,7 @@ public class BasicBackupService implements BackupService {
     if (!needBackup) {
       Backup skipped = Backup.skip(worker);
       backupRepository.save(skipped);
-      return;
+      return BackupResponse.from(skipped);
     }
 
     // 백업 시작(IN_PROGRESS 상태, 트랜잭션)
@@ -102,7 +102,9 @@ public class BasicBackupService implements BackupService {
       csvFile = fileService.saveInternalData("backup_data.csv", "text/csv", csvData);
 
       // 백업 완료(COMPLETED 상태)
-      backupTxService.complete(backupId, csvFile);
+      Backup completed = backupTxService.complete(backupId, csvFile);
+
+      return BackupResponse.from(completed);
 
     } catch (Exception e) {
       // 백업 실패(FAILED) 상태
@@ -114,13 +116,13 @@ public class BasicBackupService implements BackupService {
       FileEntity logFile = fileService.saveInternalData("backup_error.log", "text/plain", logData);
 
       // 백업 실패(FAILED 상태)
-      backupTxService.fail(backupId, logFile);
+      Backup failed = backupTxService.fail(backupId, logFile);
 
       // 백업 최종 실패 시 CSV파일이 남아있을 경우 삭제
       if (csvFile != null) {
         fileService.cleanupDummyFile(csvFile.getId());
       }
-
+      return BackupResponse.from(failed);
     }
   }
 

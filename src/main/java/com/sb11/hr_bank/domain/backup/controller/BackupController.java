@@ -33,11 +33,11 @@ public class BackupController {
 
   // 데이터 백업 생성
   @PostMapping
-  public ResponseEntity<Void> startBackup(
+  public ResponseEntity<BackupResponse> startBackup(
       HttpServletRequest request) {
     String worker = extractWorker(request);
-    backupService.startBackup(worker);
-    return ResponseEntity.ok().build();
+    BackupResponse response = backupService.startBackup(worker);
+    return ResponseEntity.ok(response);
   }
 
   // 가장 최근 백업 조회(상태별 조회)
