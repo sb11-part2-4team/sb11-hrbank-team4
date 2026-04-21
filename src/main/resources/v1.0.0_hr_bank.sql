@@ -84,7 +84,7 @@ CREATE TABLE IF NOT EXISTS backups
     status     VARCHAR(20)                           NOT NULL,
     file_id    BIGINT,
 
-    CHECK (status IN ('진행중', '완료', '실패', '건너뜀')),
+    CHECK (status IN ('IN_PROGRESS', 'COMPLETED', 'FAILED', 'SKIPPED')),
 
     FOREIGN KEY (file_id) REFERENCES file_entities (id) ON DELETE SET NULL
 
