@@ -20,6 +20,7 @@ public interface EmployeeRepository
     Long countByHireDateLessThan(LocalDate date);
     boolean existsByDepartmentId(Long departmentId);
     List<Employee> findByDepartmentId(Long departmentId);
+    List<Employee> findByDepartmentIdIn(List<Long> departmentIds);
 
     @Query("SELECT MAX(e.employeeNumber) FROM Employee e WHERE e.employeeNumber LIKE CONCAT('EMP-', :year, '-%')")
     Optional<String> findMaxEmployeeNumberByYear(@Param("year") int year);
