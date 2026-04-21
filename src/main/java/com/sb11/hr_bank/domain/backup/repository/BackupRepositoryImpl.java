@@ -71,7 +71,7 @@ public class BackupRepositoryImpl implements BackupRepositoryCustom {
       }
 
       // endedAt은 Nullable 속성으로 null값이 들어올 수 있음
-      // direciton이 오름차순일 경우 존재하는 값들이 먼저, 내림차순일 경우 null이 먼저
+      // direction이 오름차순일 경우 null값이 먼저, 내림차순일 경우 null값이 마지막으로 정렬
       case ENDED_AT -> {
         OrderSpecifier.NullHandling nullHandling = direction == Order.ASC
             ? OrderSpecifier.NullHandling.NullsFirst : OrderSpecifier.NullHandling.NullsLast;
