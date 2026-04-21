@@ -3,7 +3,6 @@ package com.sb11.hr_bank.domain.backup.repository;
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
-import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.sb11.hr_bank.domain.backup.dto.BackupCursor;
 import com.sb11.hr_bank.domain.backup.dto.BackupSearchCondition;
@@ -72,11 +71,11 @@ public class BackupRepositoryImpl implements BackupRepositoryCustom {
       }
 
       // endedAt은 Nullable 속성으로 null값이 들어올 수 있음
-      // null일 경우 1, null이 아닐 경우 0을 부여
-      // direciton이 오름차순일 경우 존재하는 값들이 먼저(0<1), 내림차순일 경우 null이 먼저(1>0)
+      // direciton이 오름차순일 경우 존재하는 값들이 먼저, 내림차순일 경우 null이 먼저
       case ENDED_AT -> {
-        orders.add(new OrderSpecifier<>(direction,
-            Expressions.cases().when(b.endedAt.isNull()).then(1).otherwise(0)));
+        OrderSpecifier.NullHandling nullHandling = direction == Order.ASC
+            ? OrderSpecifier.NullHandling.NullsFirst : OrderSpecifier.NullHandling.NullsLast;
+        orders.add(new OrderSpecifier<>(direction, b.endedAt, nullHandling));
         orders.add(new OrderSpecifier<>(direction, b.id));
       }
 
