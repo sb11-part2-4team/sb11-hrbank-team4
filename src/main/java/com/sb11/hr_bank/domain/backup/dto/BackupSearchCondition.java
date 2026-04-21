@@ -18,17 +18,4 @@ public record BackupSearchCondition(
 
 ) {
 
-  public BackupSearchCondition withSize(int size) {
-    return new BackupSearchCondition(
-        worker,
-        startedAtFrom,
-        startedAtTo,
-        status,
-        idAfter,
-        cursor,
-        size,
-        sortField,
-        sortDirection
-    );
-  }
 }
