@@ -16,9 +16,6 @@ public record PageResponse<T>(
     boolean hasNext
 ) {
 
-  public PageResponse(List<DepartmentResponse> content,
-      Page<Department> departments) {
-  }
 
   public static <T> PageResponse<T> fromPage(Page<T> page){
 

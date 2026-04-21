@@ -22,6 +22,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.SliceImpl;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -60,7 +62,7 @@ public class BasicBackupService implements BackupService {
     // 백업 시작(IN_PROGRESS 상태, 트랜잭션)
     Long backupId = backupTxService.createInProgress(worker);
 
-    FileEntity file;
+    FileEntity csvFile = null;
 
     try {
       // 정상적으로 백업 성공
@@ -99,10 +101,10 @@ public class BasicBackupService implements BackupService {
       // CSV 파일로 사원 백업 데이터를 CSV 파일로 변환
       byte[] csvData = sb.toString().getBytes(StandardCharsets.UTF_8);
 
-      file = fileService.saveInternalData("backup_data.csv", "text/csv", csvData);
+      csvFile = fileService.saveInternalData("backup_data.csv", "text/csv", csvData);
 
       // 백업 완료(COMPLETED 상태)
-      backupTxService.complete(backupId, file);
+      backupTxService.complete(backupId, csvFile);
 
     } catch (Exception e) {
       // 백업 실패(FAILED) 상태
@@ -111,31 +113,89 @@ public class BasicBackupService implements BackupService {
       byte[] logData = log.getBytes(StandardCharsets.UTF_8);
 
       // log 파일로 에러 로그 생성
-      file = fileService.saveInternalData("backup_error.log", "text/plain", logData);
+      FileEntity logFile = fileService.saveInternalData("backup_error.log", "text/plain", logData);
 
       // 백업 실패(FAILED 상태)
-      backupTxService.fail(backupId, file);
+      backupTxService.fail(backupId, logFile);
 
       // 백업 최종 실패 시 CSV파일이 남아있을 경우 삭제
-      if (file != null) {
-        // TODO 추후 실패시 만들었던 파일 삭제로직 호출하기
+      if (csvFile != null) {
+        fileService.cleanupDummyFile(csvFile.getId());
       }
 
     }
   }
 
   // 백업 목록 조회
+  // 100~1까지 100개 있다고 가정했을 때
+  // 앞에서부터 10개 단위로 조회(DB에는 order by desc), 임시 content 개수는 11개(100~90)
+  // hasNext를 통해 개수를 10개로 줄임(100~91)
+  // last는 10개 중 마지막 번호인 91이 나옴
+  // 추후 91보다 작은 id를 order by desc로 조회 -> 90번부터 조회
+  // 임시 content 개수는 11개 ... 반복
   @Override
   @Transactional(readOnly = true)
   public PageResponse<BackupResponse> findAll(BackupSearchCondition condition) {
-    Pageable pageable = PageRequest.of(0, 10);
 
-    Slice<Backup> slice = backupRepository.search(condition, pageable);
+    // 페이지 size의 기본값(default)은 10
+    int size = (condition.size() == null) ? 10 : condition.size();
 
-    Long nextIdAfter = slice.hasNext() ?
-        slice.getContent().get(slice.getNumberOfElements() - 1).getId() : null;
+    // size가 음수거나 0일 경우
+    if (size <= 0) {
+      size = 10;
+    }
 
-    return PageResponse.fromSlice(slice.map(BackupResponse::from), null, nextIdAfter);
+    String sortField = condition.sortField() == null ? "startedAt" : condition.sortField();
+
+    // 정렬 방향과 정렬 기준을 설정(메서드 분리)
+//    Sort sort = buildSort(sortField, condition.sortDirection());
+
+    // pageable의 개수는 10+1 11개(QueryDSL 사용 시 동적으로 수정)
+    Pageable pageable = PageRequest.of(0, size + 1,
+//        sort);
+        Sort.by(Sort.Direction.DESC, "startedAt")
+            .and(Sort.by(Sort.Direction.DESC, "id")));
+
+    // DB 조회 pageable 개수만큼(11개) 조회(startedAt, endedAt, status 별로 분리)
+    Slice<Backup> slice = backupRepository.search(
+        condition.worker(),
+        condition.status(),
+        condition.startFrom(),
+        condition.startTo(),
+        condition.cursorStartedAt(),
+        condition.cursorId(),
+        pageable
+    );
+
+    // pageable 수만큼, 10+1개 11개를 가져옴
+    List<Backup> content = slice.getContent();
+
+    // 조회 결과 개수 > size이면 true
+    boolean hasNext = slice.hasNext();
+
+    // 0~9번까지 10개
+    if (hasNext) {
+      content = content.subList(0, size);
+    }
+
+    // content가 비면 null(마지막 원소 도달), 그렇지 않으면 마지막 데이터를 가져옴
+    Backup last = content.isEmpty() ? null : content.get(content.size() - 1);
+
+    String nextCursor = null;
+
+    if (last != null) {
+      nextCursor = last.getStartedAt().toString() + "|" + last.getId();
+    }
+
+    // DTO 변환
+    List<BackupResponse> mapped = content.stream().map(BackupResponse::from).toList();
+
+    // Slice 형태로 응답 생성
+    Slice<BackupResponse> responseSlice = new SliceImpl<>(mapped, pageable, hasNext);
+
+    //
+    return PageResponse.fromSlice(responseSlice, nextCursor,
+        last != null ? last.getId() : null);
   }
 
   // 가장 최근의 백업을 조회(상태별 조회)
@@ -165,4 +225,26 @@ public class BasicBackupService implements BackupService {
 
     return value;
   }
+//
+//  // sortField와 sortDirection 처리 메서드
+//  private Sort buildSort(String sortField, String sortDirection) {
+//
+//    // 정렬 방향을 결정(기본값은 DESC)
+//    // equalsIgnoreCase는 대소문자를 구분하지 않도록 처리하는 메서드("AsC", "asC" 등 동일하게)
+//    Direction direction =
+//        "ASC".equalsIgnoreCase(sortDirection) ? Direction.ASC : Direction.DESC;
+//
+//    // 정렬 기준을 설정(기본값은 startedAt)
+//    // 정렬 기준은 startedAt(시작시간) endedAt(종료시간) status(작업상태)
+//    // endedAt, status가 아닌 다른 값이 들어오면 startedAt로 설정
+//    String field = switch (sortField == null ? "startedAt" : sortField) {
+//      case "endedAt" -> "endedAt";
+//      case "status" -> "status";
+//      default -> "startedAt";
+//    };
+//
+//    // 선택한 기준과 방향으로 정렬(Sort.by(정렬 방향, 정렬 속성)
+//    // 만약 정렬값(시작시간, 종료시간, 상태)이 완전히 같은게 있다면 id가 큰 순서로 정렬(id는 같을 수 없기 때문)
+//    return Sort.by(direction, field).and(Sort.by(direction, "id"));
+//  }
 }
