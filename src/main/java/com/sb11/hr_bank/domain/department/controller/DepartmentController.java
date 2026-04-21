@@ -1,13 +1,14 @@
 package com.sb11.hr_bank.domain.department.controller;
 
-import com.sb11.hr_bank.domain.department.dto.DepartmentRequest;
+import com.sb11.hr_bank.domain.department.dto.DepartmentCreateRequest;
+import com.sb11.hr_bank.domain.department.dto.DepartmentPageRequest;
 import com.sb11.hr_bank.domain.department.dto.DepartmentResponse;
+import com.sb11.hr_bank.domain.department.dto.DepartmentUpdateRequest;
 import com.sb11.hr_bank.domain.department.entity.Department;
 import com.sb11.hr_bank.domain.department.service.DepartmentService;
 import com.sb11.hr_bank.global.dto.PageResponse;
-import java.time.LocalDate;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,11 +24,11 @@ public class DepartmentController implements DepartmentApi {
   // 부서등록
   @Override
   @PostMapping
-  public ResponseEntity<DepartmentResponse> createDepartment(@RequestBody DepartmentRequest request) {
+  public ResponseEntity<DepartmentResponse> createDepartment(@Valid @RequestBody DepartmentCreateRequest request) {
     Department department = Department.builder()
         .name(request.name())
         .description(request.description())
-        .createdDate(LocalDate.parse(request.establishedDate()))
+        .establishedDate(request.establishedDate())
         .build();
 
     // 서비스로부터 생성된 부서의 상세 정보를 받음
@@ -40,12 +41,11 @@ public class DepartmentController implements DepartmentApi {
   // 부서수정
   @Override
   @PatchMapping("/{id}")
-  public ResponseEntity<DepartmentResponse> updateDepartment(@PathVariable Long id, @RequestBody DepartmentRequest request) {
+  public ResponseEntity<DepartmentResponse> updateDepartment(@PathVariable Long id, @Valid @RequestBody DepartmentUpdateRequest request) {
     Department updateParam = Department.builder()
         .name(request.name())
         .description(request.description())
-        .createdDate(request.establishedDate() != null ? LocalDate.parse(request.establishedDate()) : null)
-        .build();
+        .establishedDate(request.establishedDate()).build();
 
     DepartmentResponse response = departmentService.update(id, updateParam);
     // 성공 시 200 OK를 반환
@@ -73,7 +73,9 @@ public class DepartmentController implements DepartmentApi {
   // 전체 목록 조회
   @Override
   @GetMapping
-  public ResponseEntity<PageResponse<DepartmentResponse>> getAllDepartments(@ParameterObject Pageable pageable) {
+  public ResponseEntity<PageResponse<DepartmentResponse>> getAllDepartments(@Valid @ModelAttribute DepartmentPageRequest request) {
+    // DTO 내부의 변환 메서드를 통해 안전하게 Pageable을 생성
+    Pageable pageable = request.toPageable();
     return ResponseEntity.ok(departmentService.findAll(pageable));
   }
 }

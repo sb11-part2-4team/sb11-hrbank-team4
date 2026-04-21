@@ -28,7 +28,7 @@ public record DepartmentResponse(
         department.getId(),
         department.getName(),
         department.getDescription(),
-        department.getCreatedDate(),
+        department.getEstablishedDate(),
         employees != null ? employees.size() : 0
     );
   }
