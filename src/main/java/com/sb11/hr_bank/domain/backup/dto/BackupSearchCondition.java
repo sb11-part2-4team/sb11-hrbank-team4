@@ -11,10 +11,7 @@ public record BackupSearchCondition(
     Instant startTo,
     BackupStatus status,
 
-    Instant cursorStartedAt,
-    Instant cursorEndedAt,
-    BackupStatus cursorStatus,
-    Long cursorId,
+    BackupCursor cursor,
     Integer size,
     BackupSortField sortField,
     BackupSortDirection sortDirection
