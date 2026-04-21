@@ -54,6 +54,7 @@ public interface DepartmentApi {
 
   @Operation(summary = "전체 부서 목록 조회", description = "페이징 처리된 전체 부서 목록을 조회합니다.")
   @ApiResponse(responseCode = "200", description = "전체 부서 목록 조회 성공")
+  @ApiResponse(responseCode = "400", description = "잘못된 요청 파라미터")
   @GetMapping
   ResponseEntity<PageResponse<DepartmentResponse>> getAllDepartments(@Valid @ModelAttribute DepartmentPageRequest request);
 }
