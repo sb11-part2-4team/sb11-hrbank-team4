@@ -22,22 +22,17 @@ public record DepartmentPageRequest(
     @Min(value = 1, message = "페이지 크기는 1 이상이어야 합니다.")
     Integer size,
 
-    @Schema(description = "정렬 필드 (name 또는 establishedDate)", type = "string", defaultValue = "establishedDate")
+    @Schema(description = "정렬 필드 (명세 호환용, 실제론 id 고정)", type = "string", defaultValue = "id")
     String sortField,
 
-    @Schema(description = "정렬 방향 (asc 또는 desc, 기본값: asc)", type = "string", defaultValue = "asc")
+    @Schema(description = "정렬 방향 (명세 호환용, 실제론 desc 고정)", type = "string", defaultValue = "desc")
     String sortDirection
 ) {
-
   public Pageable toPageable() {
     int limitSize = (size != null && size > 0) ? size : 10;
 
-    // 명세서 기준 정렬 방향 (기본값: asc)
-    Sort.Direction direction = "desc".equalsIgnoreCase(sortDirection) ? Sort.Direction.DESC : Sort.Direction.ASC;
+    Sort sort = Sort.by(Sort.Direction.DESC, "id");
 
-    // 명세서 기준 정렬 필드 (기본값: establishedDate)
-    String field = (sortField != null && sortField.equals("name")) ? "name" : "establishedDate";
-
-    return PageRequest.of(0, limitSize, Sort.by(direction, field));
+    return PageRequest.of(0, limitSize, sort);
   }
 }
