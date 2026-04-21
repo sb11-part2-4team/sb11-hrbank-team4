@@ -28,6 +28,8 @@ public record EmployeeCreateRequest(
         String position,
 
         @NotNull
-        LocalDate hireDate
+        LocalDate hireDate,
+
+        String memo
 ) {
 }
