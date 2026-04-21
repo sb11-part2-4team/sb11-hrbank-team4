@@ -67,17 +67,17 @@ public class BackupRepositoryImpl implements BackupRepositoryCustom {
 
       case STARTED_AT -> {
         orders.add(new OrderSpecifier<>(direction, b.startedAt));
-        orders.add(new OrderSpecifier<>(Order.DESC, b.id));
+        orders.add(new OrderSpecifier<>(direction, b.id));
       }
 
       case ENDED_AT -> {
         orders.add(new OrderSpecifier<>(direction, b.endedAt));
-        orders.add(new OrderSpecifier<>(Order.DESC, b.id));
+        orders.add(new OrderSpecifier<>(direction, b.id));
       }
 
       case STATUS -> {
         orders.add(new OrderSpecifier<>(direction, b.status));
-        orders.add(new OrderSpecifier<>(Order.DESC, b.id));
+        orders.add(new OrderSpecifier<>(direction, b.id));
       }
     }
 
