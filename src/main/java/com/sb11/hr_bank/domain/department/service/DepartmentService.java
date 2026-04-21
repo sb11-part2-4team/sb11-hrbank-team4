@@ -6,6 +6,8 @@ import com.sb11.hr_bank.domain.department.repository.DepartmentRepository;
 import com.sb11.hr_bank.domain.employee.entity.Employee;
 import com.sb11.hr_bank.domain.employee.repository.EmployeeRepository;
 import com.sb11.hr_bank.global.dto.PageResponse;
+import com.sb11.hr_bank.global.exception.BusinessException;
+import com.sb11.hr_bank.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,89 +18,111 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@Service // 이클래스가 핵심 비지니스 로직을 처리하는 서비스계층임을 선언
-@RequiredArgsConstructor // final이 붙은 레포지토리를 스프링이 자동으로 연결
-@Transactional(readOnly = true) // 테이터를 "읽기만" 하는 작업에서 성능 최적화
-
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class DepartmentService {
 
   private final DepartmentRepository departmentRepository;
   private final EmployeeRepository employeeRepository;
 
   // 부서 등록 기능 구현
-
-  @Transactional // 데이터를 저장하므로 "읽기전용"을해제 트랜잭션을 적용
-
+  @Transactional
   public DepartmentResponse save(Department department) {
+    // 입력한 부서명이 이미 DB에 있는지 확인하고 중복 예외(409) 발생
     if (departmentRepository.existsByName(department.getName())) {
-      throw new IllegalArgumentException("이미 존재하는 부서명입니다.");
-    } // 입렵한 부서명이 이미 DB에 있는지 확인하고 중복 메세지 구현
-    Department savedDepartment = departmentRepository.save(department);
-    return DepartmentResponse.from(savedDepartment, List.of());
-  } // 중복이 없으면 DB에 저장
+      throw new BusinessException(ErrorCode.DEPARTMENT_DUPLICATE_NAME);
+    }
+
+    Department saved = departmentRepository.save(department);
+    return DepartmentResponse.from(saved, List.of());
+  }
 
   // 부서 수정 기능 구현
-
   @Transactional
   public DepartmentResponse update(Long id, Department updateParam) {
+    // 수정할 부서가 DB에 있는지 확인 (없으면 404 예외)
     Department department = departmentRepository.findById(id)
-        .orElseThrow(() -> new IllegalArgumentException("해당 부서가 없습니다. id=" + id));
-    // 먼저 수정할 부서가 DB에 있는지 확인하고 가져옴
+        .orElseThrow(() -> new BusinessException(ErrorCode.DEPARTMENT_NOT_FOUND));
 
-    if (!department.getName().equals(updateParam.getName()) &&
-        departmentRepository.existsByName(updateParam.getName())) {
-      throw new IllegalArgumentException("이미 존재하는 부서명 입니다");
-    }
     // 부서명을 바꾸려고 할 때, 이미 다른 부서에서 쓰고 있는 부서명인지 체크
+    if (updateParam.getName() != null && !department.getName().equals(updateParam.getName())) {
+      if (departmentRepository.existsByName(updateParam.getName())) {
+        throw new BusinessException(ErrorCode.DEPARTMENT_DUPLICATE_NAME);
+      }
+      department.setName(updateParam.getName());
+    }
 
-    department.setName(updateParam.getName());
-    department.setDescription(updateParam.getDescription());
-    department.setCreatedDate(updateParam.getCreatedDate());
+    if (updateParam.getDescription() != null) {
+      department.setDescription(updateParam.getDescription());
+    }
+    if (updateParam.getEstablishedDate() != null) {
+      department.setEstablishedDate(updateParam.getEstablishedDate());
+    }
 
     List<Employee> employees = employeeRepository.findByDepartmentId(id);
     return DepartmentResponse.from(department, employees);
   }
 
-  // 부서삭제 기능
-
+  // 부서 삭제 기능
   @Transactional
   public void delete(Long id) {
-    // 삭제할 부서가 현재 존재하는지 확인
     Department department = departmentRepository.findById(id)
-        .orElseThrow(() -> new IllegalArgumentException("해당 부서가 없습니다. id=" + id));
+        .orElseThrow(() -> new BusinessException(ErrorCode.DEPARTMENT_NOT_FOUND));
 
-    // 삭제할 부서에 현재 소속 직원이 있는지 확인
+    // 해당 부서에 소속된 직원이 있는지 확인 후 삭제 불가 예외(409) 발생
     if (employeeRepository.existsByDepartmentId(id)) {
-      throw new IllegalStateException("해당 부서에 소속된 직원이 있어 삭제할 수 없습니다.");
+      throw new BusinessException(ErrorCode.DEPARTMENT_HAS_EMPLOYEES);
     }
 
-    // 삭제할 부서의 현재 소속된 직원이 없을 때만 실제 삭제 실행
     departmentRepository.delete(department);
   }
 
-  // 부서상세조회 기능
+  // 부서 상세 조회
   public DepartmentResponse getDepartmentDetail(Long id) {
-    // 요청시 부서 정보를 DB에서 찾음. 없으면 예외 메세지를 보냄
     Department department = departmentRepository.findById(id)
-        .orElseThrow(() -> new IllegalArgumentException("해당 부서가 없습니다. id=" + id));
+        .orElseThrow(() -> new BusinessException(ErrorCode.DEPARTMENT_NOT_FOUND));
 
-    // 직원 레포지토리에게 해당 부서의 ID를 가진 모든 직원들을 찾아오라고 시킴
     List<Employee> employees = employeeRepository.findByDepartmentId(id);
-
     return DepartmentResponse.from(department, employees);
   }
 
-  // 전체 부서 목록 조회 (페이지네이션 적용)
 
-  public PageResponse<DepartmentResponse> findAll(Pageable pageable) {
+  public PageResponse<DepartmentResponse> findAll(Pageable pageable, String nameOrDescription, Long idAfter) {
+    Page<Department> departmentPage;
 
-    Page<Department> departmentPage = departmentRepository.findAll(pageable);
+    boolean hasSearch = (nameOrDescription != null && !nameOrDescription.trim().isEmpty());
+
+    if (hasSearch && idAfter != null) {
+      departmentPage = departmentRepository.findByIdLessThanAndNameContainingOrIdLessThanAndDescriptionContainingOrderByIdDesc(
+          idAfter, nameOrDescription, idAfter, nameOrDescription, pageable);
+    } else if (hasSearch) {
+      departmentPage = departmentRepository.findByNameContainingOrDescriptionContaining(
+          nameOrDescription, nameOrDescription, pageable);
+    } else if (idAfter != null) {
+      departmentPage = departmentRepository.findByIdLessThanOrderByIdDesc(idAfter, pageable);
+    } else {
+      departmentPage = departmentRepository.findAll(pageable);
+    }
 
     List<Department> departments = departmentPage.getContent();
+
+    // 조회된 부서가 없으면 빠른 응답 반환
+    if (departments.isEmpty()) {
+      return new PageResponse<>(
+          List.of(),
+          null,
+          null,
+          departmentPage.getSize(),
+          departmentPage.getTotalElements(),
+          false
+      );
+    }
+
     List<Long> deptIds = departments.stream().map(Department::getId).toList();
-
-
     List<Employee> allEmployees = employeeRepository.findByDepartmentIdIn(deptIds);
+
+    // 부서 ID를 기준으로 직원 목록 그룹화
     Map<Long, List<Employee>> employeeMap = allEmployees.stream()
         .collect(Collectors.groupingBy(e -> e.getDepartment().getId()));
 
@@ -106,7 +130,15 @@ public class DepartmentService {
         .map(dept -> DepartmentResponse.from(dept, employeeMap.getOrDefault(dept.getId(), List.of())))
         .toList();
 
+    Long nextIdAfter = content.isEmpty() ? null : content.get(content.size() - 1).id();
 
-    return new PageResponse<>(content, departmentPage);
+    return new PageResponse<>(
+        content,
+        null,
+        nextIdAfter,
+        departmentPage.getSize(),
+        departmentPage.getTotalElements(),
+        departmentPage.hasNext()
+    );
   }
 }
