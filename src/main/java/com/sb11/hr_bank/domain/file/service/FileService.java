@@ -1,7 +1,6 @@
 package com.sb11.hr_bank.domain.file.service;
 
 import com.sb11.hr_bank.domain.file.entity.FileEntity;
-import com.sb11.hr_bank.domain.file.entity.FileStatus;
 import com.sb11.hr_bank.domain.file.repository.FileRepository;
 import com.sb11.hr_bank.global.exception.BusinessException;
 import com.sb11.hr_bank.global.exception.ErrorCode;
@@ -87,7 +86,7 @@ public class FileService {
     }
 
     //DB 메타데이터 저장
-    FileEntity fileEntity = new FileEntity(name, contentType, size, FileStatus.COMPLETED);
+    FileEntity fileEntity = new FileEntity(name, contentType, size);
 
     //DB에 저장되며 ID 발급
     return fileRepository.save(fileEntity);
