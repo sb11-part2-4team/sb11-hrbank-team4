@@ -7,23 +7,24 @@ import java.time.Instant;
 
 public record BackupSearchCondition(
     String worker,
-    Instant startFrom,
-    Instant startTo,
+    Instant startedAtFrom,
+    Instant startedAtTo,
     BackupStatus status,
-
-    BackupCursor cursor,
+    Long idAfter,
+    String cursor,
     Integer size,
     BackupSortField sortField,
     BackupSortDirection sortDirection
 
 ) {
 
-  public BackupSearchCondition from(BackupCursor cursor) {
+  public BackupSearchCondition withSize(int size) {
     return new BackupSearchCondition(
         worker,
-        startFrom,
-        startTo,
+        startedAtFrom,
+        startedAtTo,
         status,
+        idAfter,
         cursor,
         size,
         sortField,

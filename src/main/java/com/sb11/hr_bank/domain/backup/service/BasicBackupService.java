@@ -132,19 +132,28 @@ public class BasicBackupService implements BackupService {
   }
 
   // 백업 목록 조회
-  // 100~1까지 100개 있다고 가정했을 때
-  // 앞에서부터 10개 단위로 조회(DB에는 order by desc), 임시 content 개수는 11개(100~90)
-  // hasNext를 통해 개수를 10개로 줄임(100~91)
-  // last는 10개 중 마지막 번호인 91이 나옴
-  // 추후 91보다 작은 id를 order by desc로 조회 -> 90번부터 조회
-  // 임시 content 개수는 11개 ... 반복
   @Override
   @Transactional(readOnly = true)
   public PageResponse<BackupResponse> findAll(BackupSearchCondition condition) {
 
-    Slice<Backup> slice = backupRepository.search(condition);
+    // 클라이언트에서 전달된 Base64 cursor 정보를 decode시켜 BackupCursor 객체로 변환
+    BackupCursor cursor = null;
 
-    // pageable 수만큼, 10+1개 11개를 가져옴
+    if (condition.cursor() != null) {
+      cursor = decodeCursor(condition.cursor());
+    }
+
+    // 페이지 크기 설정(음수, 0일 경우나 null일 경우 10으로 지정 / 기본값을 10으로 지정함)
+    int size = (condition.size() == null || condition.size() <= 0)
+        ? 10 : condition.size();
+
+    // 설정된 size를 condition으로 넘기고 DB에서 size를 조회하도록 설정
+    BackupSearchCondition addSizeCondition = condition.withSize(size);
+
+    // DB의 QueryDSL 쿼리 조회
+    Slice<Backup> slice = backupRepository.search(addSizeCondition, cursor);
+
+    // size만큼 조회 된 데이터 목록
     List<Backup> content = slice.getContent();
 
     // 조회 결과 개수 > size이면 true
@@ -154,17 +163,17 @@ public class BasicBackupService implements BackupService {
     Backup last = content.isEmpty() ? null : content.get(content.size() - 1);
 
     String nextCursor = null;
+    Long nextIdAfter = null;
 
+    // 다음 페이지 요청을 위한 cursor 생성 및 Base64로 인코딩
     if (last != null) {
-      BackupCursor cursor = new BackupCursor(
+      nextCursor = encodeCursor(new BackupCursor(
           last.getStartedAt(),
           last.getEndedAt(),
           last.getStatus(),
           last.getId()
-      );
-
-      // nextCursor를 Base64로 인코딩
-      nextCursor = encodeCursor(cursor);
+      ));
+      nextIdAfter = last.getId();
     }
 
     // DTO 변환
@@ -172,11 +181,10 @@ public class BasicBackupService implements BackupService {
 
     // Slice 형태로 응답 생성
     Slice<BackupResponse> responseSlice = new SliceImpl<>(mapped,
-        PageRequest.of(0, condition.size()), hasNext);
+        PageRequest.of(0, size), hasNext);
 
-    //
-    return PageResponse.fromSlice(responseSlice, nextCursor,
-        last != null ? last.getId() : null);
+    // 백업 데이터를 커서 기반 Slice 페이지네이션 방식으로 응답 반환
+    return PageResponse.fromSlice(responseSlice, nextCursor, nextIdAfter);
   }
 
   // 가장 최근의 백업을 조회(상태별 조회)
@@ -207,6 +215,7 @@ public class BasicBackupService implements BackupService {
     return value;
   }
 
+  // Base64로 인코딩
   private String encodeCursor(BackupCursor cursor) {
     if (cursor == null) {
       return null;
@@ -220,8 +229,8 @@ public class BasicBackupService implements BackupService {
     }
   }
 
-  @Override
-  public BackupCursor decodeCursor(String cursor) {
+  // Base64로 된 문자열을 해독시켜주는 메서드
+  private BackupCursor decodeCursor(String cursor) {
     if (cursor == null) {
       return null;
     }
