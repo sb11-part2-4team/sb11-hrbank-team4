@@ -20,10 +20,8 @@ import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -137,35 +135,7 @@ public class BasicBackupService implements BackupService {
   @Transactional(readOnly = true)
   public PageResponse<BackupResponse> findAll(BackupSearchCondition condition) {
 
-    // 페이지 size의 기본값(default)은 10
-    int size = (condition.size() == null) ? 10 : condition.size();
-
-    // size가 음수거나 0일 경우
-    if (size <= 0) {
-      size = 10;
-    }
-
-    String sortField = condition.sortField() == null ? "startedAt" : condition.sortField();
-
-    // 정렬 방향과 정렬 기준을 설정(메서드 분리)
-//    Sort sort = buildSort(sortField, condition.sortDirection());
-
-    // pageable의 개수는 10+1 11개(QueryDSL 사용 시 동적으로 수정)
-    Pageable pageable = PageRequest.of(0, size + 1,
-//        sort);
-        Sort.by(Sort.Direction.DESC, "startedAt")
-            .and(Sort.by(Sort.Direction.DESC, "id")));
-
-    // DB 조회 pageable 개수만큼(11개) 조회(startedAt, endedAt, status 별로 분리)
-    Slice<Backup> slice = backupRepository.search(
-        condition.worker(),
-        condition.status(),
-        condition.startFrom(),
-        condition.startTo(),
-        condition.cursorStartedAt(),
-        condition.cursorId(),
-        pageable
-    );
+    Slice<Backup> slice = backupRepository.search(condition);
 
     // pageable 수만큼, 10+1개 11개를 가져옴
     List<Backup> content = slice.getContent();
@@ -173,25 +143,25 @@ public class BasicBackupService implements BackupService {
     // 조회 결과 개수 > size이면 true
     boolean hasNext = slice.hasNext();
 
-    // 0~9번까지 10개
-    if (hasNext) {
-      content = content.subList(0, size);
-    }
-
     // content가 비면 null(마지막 원소 도달), 그렇지 않으면 마지막 데이터를 가져옴
     Backup last = content.isEmpty() ? null : content.get(content.size() - 1);
 
     String nextCursor = null;
 
     if (last != null) {
-      nextCursor = last.getStartedAt().toString() + "|" + last.getId();
+      switch (condition.sortField()) {
+        case STARTED_AT -> nextCursor = last.getStartedAt() + "|" + last.getId();
+        case ENDED_AT -> nextCursor = last.getEndedAt() + "|" + last.getId();
+        case STATUS -> nextCursor = last.getStatus() + "|" + last.getId();
+      }
     }
 
     // DTO 변환
     List<BackupResponse> mapped = content.stream().map(BackupResponse::from).toList();
 
     // Slice 형태로 응답 생성
-    Slice<BackupResponse> responseSlice = new SliceImpl<>(mapped, pageable, hasNext);
+    Slice<BackupResponse> responseSlice = new SliceImpl<>(mapped,
+        PageRequest.of(0, condition.size()), hasNext);
 
     //
     return PageResponse.fromSlice(responseSlice, nextCursor,
