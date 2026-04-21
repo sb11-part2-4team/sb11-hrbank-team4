@@ -101,7 +101,7 @@ public class BackupRepositoryImpl implements BackupRepositoryCustom {
           ? b.startedAt.gt(cursor.startedAt())
           .or
               (b.startedAt.eq(cursor.startedAt())
-                  .and(b.id.gt(cursor.id())))
+                  .and(b.id.lt(cursor.id())))
           : b.startedAt.lt(cursor.startedAt())
               .or
                   (b.startedAt.eq(cursor.startedAt())
@@ -111,7 +111,7 @@ public class BackupRepositoryImpl implements BackupRepositoryCustom {
           ? b.endedAt.gt(cursor.endedAt())
           .or
               (b.endedAt.eq(cursor.endedAt())
-                  .and(b.id.gt(cursor.id())))
+                  .and(b.id.lt(cursor.id())))
           : b.endedAt.lt(cursor.endedAt())
               .or
                   (b.endedAt.eq(cursor.endedAt())
@@ -121,7 +121,7 @@ public class BackupRepositoryImpl implements BackupRepositoryCustom {
           ? b.status.gt(cursor.status())
           .or
               (b.status.eq(cursor.status())
-                  .and(b.id.gt(cursor.id())))
+                  .and(b.id.lt(cursor.id())))
           : b.status.lt(cursor.status())
               .or
                   (b.status.eq(cursor.status())
