@@ -226,10 +226,13 @@ public class EmployeeService {
             throw new BusinessException(ErrorCode.EMPLOYEE_INVALID_DATE_RANGE);
         }
 
-        List<LocalDate> buckets = new ArrayList<>();
-        LocalDate current = from;
+        LocalDate bucketFrom = startOfBucket(from, unit);
+        LocalDate bucketTo = startOfBucket(to, unit);
 
-        while(!current.isAfter(to)) {
+        List<LocalDate> buckets = new ArrayList<>();
+        LocalDate current = bucketFrom;
+
+        while(!current.isAfter(bucketTo)) {
             buckets.add(current);
             current = nextDate(current, unit);
         }
@@ -239,12 +242,11 @@ public class EmployeeService {
         long count = previousCount;
 
         for(LocalDate bucket : buckets) {
+            LocalDate bucketStart = bucket.isBefore(from) ? from : bucket;
             LocalDate bucketEnd = nextDate(bucket, unit).minusDays(1);
-            if(bucketEnd.isAfter(to)) {
-                bucketEnd = to;
-            }
+            bucketEnd = bucketEnd.isAfter(to) ? to : bucketEnd;
 
-            long change = employeeRepository.countByHireDateBetween(bucket, bucketEnd);
+            long change = employeeRepository.countByHireDateBetween(bucketStart, bucketEnd);
             count += change;
 
             result.add(new EmployeeTrendDto(
@@ -320,6 +322,17 @@ public class EmployeeService {
         }
 
         return Math.round(value * 1000.0 / total) / 10.0;
+    }
+
+    private LocalDate startOfBucket(LocalDate date, String unit) {
+        return switch (unit) {
+            case "day" -> date;
+            case "week" -> date.minusDays(date.getDayOfWeek().getValue() - 1);
+            case "month" -> date.withDayOfMonth(1);
+            case "quarter" -> date.withMonth(((date.getMonthValue() - 1) / 3) * 3 + 1).withDayOfMonth(1);
+            case "year" -> date.withDayOfYear(1);
+            default -> throw new BusinessException(ErrorCode.EMPLOYEE_INVALID_TREND_UNIT);
+        };
     }
 
     private LocalDate nextDate(LocalDate date, String unit) {
