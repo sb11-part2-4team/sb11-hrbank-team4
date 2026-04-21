@@ -6,6 +6,7 @@ import com.sb11.hr_bank.domain.backup.entity.BackupStatus;
 import com.sb11.hr_bank.domain.backup.service.BackupService;
 import com.sb11.hr_bank.global.dto.PageResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,6 +21,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class BackupController {
 
+  // ipv4패턴(XXX.XXX.XXX.XXX)
+  // 25(0~9), 200~240, 100~199, 0~99내의 숫자들을 3번씩
+  private static final Pattern IPV4_PATTERN = Pattern.compile(
+      "^(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)"
+          + "(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}$");
   private final BackupService backupService;
 
   // 데이터 백업 목록 조회
@@ -36,7 +42,7 @@ public class BackupController {
   @PostMapping
   public ResponseEntity<BackupResponse> startBackup(
       HttpServletRequest request) {
-    String worker = extractWorker(request);
+    String worker = normalizeWorker(extractWorker(request));
     BackupResponse response = backupService.startBackup(worker);
     return ResponseEntity.ok(response);
   }
@@ -58,6 +64,20 @@ public class BackupController {
       return ip.split(",")[0].trim();
     }
     return request.getRemoteAddr();
+  }
+
+  // 작업자가 누구인지 결정
+  // ip 주소가 빌 경우 system(스케쥴러), ipv4가 들어오면 ipv4주소, 나머지(ipv6)가 들어올 경우 ipv6 address가 됨
+  private String normalizeWorker(String ip) {
+    if (ip == null || ip.isBlank()) {
+      return "system";
+    }
+
+    if (IPV4_PATTERN.matcher(ip).matches()) {
+      return ip;
+    }
+
+    return "IPV6";
   }
 
 }
