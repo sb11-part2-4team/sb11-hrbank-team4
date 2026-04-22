@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/backups")
 @RequiredArgsConstructor
-public class BackupController {
+public class BackupController implements BackupApi {
 
   // ipv4패턴(XXX.XXX.XXX.XXX)
   // 25(0~9), 200~240, 100~199, 0~99내의 숫자들을 3번씩
@@ -35,6 +35,7 @@ public class BackupController {
   private final BackupService backupService;
 
   // 데이터 백업 목록 조회
+  @Override
   @GetMapping
   public ResponseEntity<PageResponse<BackupResponse>> findAll(
       @ModelAttribute BackupSearchCondition condition
@@ -45,6 +46,7 @@ public class BackupController {
   }
 
   // 데이터 백업 생성
+  @Override
   @PostMapping
   public ResponseEntity<BackupResponse> startBackup(
       HttpServletRequest request) {
@@ -55,6 +57,7 @@ public class BackupController {
 
   // 가장 최근 백업 조회(상태별 조회)
   // 상태 기본값은 COMPLETED
+  @Override
   @GetMapping("/latest")
   public ResponseEntity<BackupResponse> findLatest(
       @RequestParam(name = "status", defaultValue = "COMPLETED") BackupStatus status) {
