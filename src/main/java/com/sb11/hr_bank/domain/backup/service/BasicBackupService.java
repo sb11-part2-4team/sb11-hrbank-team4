@@ -108,12 +108,12 @@ public class BasicBackupService implements BackupService {
       // CSV 파일로 사원 백업 데이터를 CSV 파일로 변환
       byte[] csvData = sb.toString().getBytes(StandardCharsets.UTF_8);
 
-      // 파일 이름 설정 employee_backup_(backupId)_(서울 기준 현재 시간).csv
-      String timestamp = LocalDateTime.now(ZoneId.of("Asia/Seoul"))
+      // 파일 이름 설정 employee_backup_{backupId}_{서울 기준 현재 시간}.csv
+      String csvTimestamp = LocalDateTime.now(ZoneId.of("Asia/Seoul"))
           .format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_SSS"));
-      String fileName = "employee_backup_" + backupId + "_" + timestamp + ".csv";
+      String csvFileName = "employee_backup_" + backupId + "_" + csvTimestamp + ".csv";
 
-      csvFile = fileService.saveInternalData(fileName, "text/csv", csvData);
+      csvFile = fileService.saveInternalData(csvFileName, "text/csv", csvData);
 
       // 백업 완료(COMPLETED 상태)
       Backup completed = backupTxService.complete(backupId, csvFile);
@@ -126,8 +126,13 @@ public class BasicBackupService implements BackupService {
       String log = "Error : " + e.getMessage();
       byte[] logData = log.getBytes(StandardCharsets.UTF_8);
 
+      // 파일 이름 설정 backup_error_{backupId}_{서울 기준 현재 시간}.log
+      String logTimestamp = LocalDateTime.now(ZoneId.of("Asia/Seoul"))
+          .format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_SSS"));
+      String logFileName = "backup_error_" + backupId + "_" + logTimestamp + ".log";
+
       // log 파일로 에러 로그 생성
-      FileEntity logFile = fileService.saveInternalData("backup_error.log", "text/plain", logData);
+      FileEntity logFile = fileService.saveInternalData(logFileName, "text/plain", logData);
 
       // 백업 실패(FAILED 상태)
       Backup failed = backupTxService.fail(backupId, logFile);
