@@ -51,8 +51,8 @@ public enum ErrorCode {
   BACKUP_REQUIRED_FILE(500, "B003", "백업 파일이 생성되지 않았습니다."),
   BACKUP_INVALID_STATUS(400, "B004", "유효하지 않은 백업 상태입니다."),
   BACKUP_CURSOR_ENCODE_FAILED(500, "B005", "커서 인코딩에 실패했습니다."),
-  BACKUP_CURSOR_DECODE_FAILED(500, "B006", "커서 디코딩에 실패했습니다."),
-
+  BACKUP_CURSOR_DECODE_FAILED(400, "B006", "커서 디코딩에 실패했습니다."),
+  BACKUP_INVALID_SORT_FIELD(400, "B007", "유효하지 않은 정렬 기준입니다."),
 
   DUMMY_ERROR(500, "G002", "DUMMY");
 

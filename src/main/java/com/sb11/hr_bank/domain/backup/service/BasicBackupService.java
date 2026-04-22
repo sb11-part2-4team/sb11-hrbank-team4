@@ -6,6 +6,8 @@ import com.sb11.hr_bank.domain.backup.dto.BackupResponse;
 import com.sb11.hr_bank.domain.backup.dto.BackupSearchCondition;
 import com.sb11.hr_bank.domain.backup.entity.Backup;
 import com.sb11.hr_bank.domain.backup.entity.BackupStatus;
+import com.sb11.hr_bank.domain.backup.query.BackupSortDirection;
+import com.sb11.hr_bank.domain.backup.query.BackupSortField;
 import com.sb11.hr_bank.domain.backup.repository.BackupRepository;
 import com.sb11.hr_bank.domain.changelogs.repository.ChangeLogRepository;
 import com.sb11.hr_bank.domain.employee.entity.Employee;
@@ -148,10 +150,20 @@ public class BasicBackupService implements BackupService {
         ? 10 : condition.size();
 
     // 설정된 size를 condition으로 넘기고 DB에서 size를 조회하도록 설정
-    BackupSearchCondition addSizeCondition = condition.withSize(size);
+    BackupSearchCondition initializeCondition = new BackupSearchCondition(
+        condition.worker(),
+        condition.startedAtFrom(),
+        condition.startedAtTo(),
+        condition.status(),
+        condition.idAfter(),
+        condition.cursor(),
+        size,
+        Optional.ofNullable(condition.sortField()).orElse(BackupSortField.STARTED_AT),
+        Optional.ofNullable(condition.sortDirection()).orElse(BackupSortDirection.DESC)
+    );
 
     // DB의 QueryDSL 쿼리 조회
-    Slice<Backup> slice = backupRepository.search(addSizeCondition, cursor);
+    Slice<Backup> slice = backupRepository.search(initializeCondition, cursor);
 
     // size만큼 조회 된 데이터 목록
     List<Backup> content = slice.getContent();
