@@ -2,8 +2,10 @@ package com.sb11.hr_bank.domain.changelogs.service;
 
 import com.sb11.hr_bank.domain.changelogs.dto.request.ChangeLogRequestDto;
 import com.sb11.hr_bank.domain.changelogs.dto.response.ChangeLogResponseDto;
+import com.sb11.hr_bank.domain.changelogs.entity.ChangeDetailLog;
 import com.sb11.hr_bank.domain.changelogs.entity.ChangeLog;
 import com.sb11.hr_bank.domain.changelogs.repository.ChangeLogRepository;
+import com.sb11.hr_bank.domain.employee.repository.EmployeeRepository;
 import com.sb11.hr_bank.global.dto.PageResponse;
 import com.sb11.hr_bank.global.exception.ErrorCode;
 import com.sb11.hr_bank.global.exception.BusinessException;
@@ -22,6 +24,7 @@ import java.util.stream.Collectors;
 public class ChangeLogService {
 
   private final ChangeLogRepository changeLogRepository;
+  private final EmployeeRepository employeeRepository;
 
   /**
    * 1. 이력 목록 조회 (복합 커서 페이징 적용)
@@ -127,5 +130,51 @@ public class ChangeLogService {
     Instant end = (toDate != null) ? toDate : Instant.now();
 
     return changeLogRepository.countByCreatedAtBetween(start, end);
+  }
+
+  /**
+   * 4. 변경 이력 생성 (다른 서비스에서 호출용)
+   */
+  @Transactional
+  public void createLog(ChangeLogRequestDto.Create createDto, String ipAddress) {
+    // 1. 직원 엔티티 조회
+    com.sb11.hr_bank.domain.employee.entity.Employee employee =
+        employeeRepository.findById(createDto.getEmployeeId())
+            .orElseThrow(() -> new BusinessException(ErrorCode.EMPLOYEE_NOT_FOUND));
+
+    // 2. 로그 메인 엔티티 생성
+    ChangeLog changeLog = ChangeLog.builder()
+        .employee(employee)
+        .type(createDto.getType())
+        .memo(createDto.getMemo())
+        .ipAddress(ipAddress)
+        .build();
+
+    // 3. 상세 내역(Details) 추가
+    if (createDto.getDetails() != null) {
+      for (ChangeLogRequestDto.Create.Detail detailDto : createDto.getDetails()) {
+        try {
+          // String을 Enum(ChangeProperty)으로 변환하여 저장
+          String propertyStr = detailDto.getPropertyName().toUpperCase();
+          com.sb11.hr_bank.domain.changelogs.entity.ChangeProperty property =
+              com.sb11.hr_bank.domain.changelogs.entity.ChangeProperty.valueOf(propertyStr);
+
+          ChangeDetailLog detail = ChangeDetailLog.builder()
+              .propertyName(property)
+              .before(detailDto.getBefore())
+              .after(detailDto.getAfter())
+              .build();
+
+          changeLog.addDetail(detail);
+        } catch (IllegalArgumentException e) {
+          // 잘못된 이름 들어와도 로그 생성 전체가 실패하지 않도록 방어
+          System.out.println("알 수 없는 변경 항목명 무시됨: " + detailDto.getPropertyName());
+        }
+
+      }
+    }
+
+    // 4. 저장
+    changeLogRepository.save(changeLog);
   }
 }
