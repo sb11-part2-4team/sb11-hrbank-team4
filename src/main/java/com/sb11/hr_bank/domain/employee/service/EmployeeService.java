@@ -255,11 +255,11 @@ public class EmployeeService {
         }
 
         List<EmployeeTrendDto> result = new ArrayList<>();
-        long previousCount = employeeRepository.countByHireDateLessThan(from);
+        long previousCount = employeeRepository.countByHireDateLessThan(bucketFrom);
         long count = previousCount;
 
         for(LocalDate bucket : buckets) {
-            LocalDate bucketStart = bucket.isBefore(from) ? from : bucket;
+            LocalDate bucketStart = bucket.isBefore(bucketFrom) ? bucketFrom : bucket;
             LocalDate bucketEnd = nextDate(bucket, unit).minusDays(1);
             bucketEnd = bucketEnd.isAfter(to) ? to : bucketEnd;
 
