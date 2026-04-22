@@ -1,6 +1,8 @@
 package com.sb11.hr_bank.domain.backup.query;
 
 import com.fasterxml.jackson.annotation.JsonValue;
+import com.sb11.hr_bank.global.exception.BusinessException;
+import com.sb11.hr_bank.global.exception.ErrorCode;
 
 public enum BackupSortField {
   STARTED_AT("startedAt"),
@@ -19,7 +21,7 @@ public enum BackupSortField {
         return field;
       }
     }
-    return null;
+    throw new BusinessException(ErrorCode.BACKUP_INVALID_SORT_FIELD);
   }
 
   @JsonValue
