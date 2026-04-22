@@ -30,7 +30,7 @@ public class ChangeLogController {
   // 직원 정보 수정 이력 상세 조회
   @GetMapping("/{id}")
   public ResponseEntity<ChangeLogResponseDto.DetailInfo> getLogDetail(
-      @PathVariable("id") Long id
+      @PathVariable Long id
   ) {
       ChangeLogResponseDto.DetailInfo response = changeLogService.getLogDetail(id);
 

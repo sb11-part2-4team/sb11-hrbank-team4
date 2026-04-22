@@ -2,27 +2,18 @@ package com.sb11.hr_bank.domain.changelogs.service;
 
 import com.sb11.hr_bank.domain.changelogs.dto.request.ChangeLogRequestDto;
 import com.sb11.hr_bank.domain.changelogs.dto.response.ChangeLogResponseDto;
-import com.sb11.hr_bank.domain.changelogs.entity.ChangeDetailLog;
 import com.sb11.hr_bank.domain.changelogs.entity.ChangeLog;
-import com.sb11.hr_bank.domain.changelogs.entity.ChangeProperty;
 import com.sb11.hr_bank.domain.changelogs.repository.ChangeLogRepository;
-import com.sb11.hr_bank.domain.changelogs.repository.ChangeDetailLogRepository;
-import com.sb11.hr_bank.domain.employee.entity.Employee;
-import com.sb11.hr_bank.domain.employee.repository.EmployeeRepository;
 import com.sb11.hr_bank.global.dto.PageResponse;
-import com.sb11.hr_bank.global.exception.BusinessException;
 import com.sb11.hr_bank.global.exception.ErrorCode;
+import com.sb11.hr_bank.global.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
-import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,127 +22,110 @@ import java.util.stream.Collectors;
 public class ChangeLogService {
 
   private final ChangeLogRepository changeLogRepository;
-  private final ChangeDetailLogRepository changeDetailLogRepository;
-  private final EmployeeRepository employeeRepository;
 
-  @Transactional
-  public void createLog(ChangeLogRequestDto.Create request, String ipAddress) {
-    // 1. 실제로 직원이 존재하는지 체크는 하되, 연관관계는 프록시로 세팅 (성능 최적화)
-    if (!employeeRepository.existsById(request.getEmployeeId())) {
-      throw new BusinessException(ErrorCode.EMPLOYEE_NOT_FOUND);
-    }
-    Employee employee = employeeRepository.getReferenceById(request.getEmployeeId());
-
-    ChangeLog changeLog = ChangeLog.builder()
-        .employee(employee)
-        .type(request.getType())
-        .memo(request.getMemo())
-        .ipAddress(ipAddress)
-        .build();
-
-    if (request.getDetails() != null) {
-      for (ChangeLogRequestDto.Create.Detail detailDto : request.getDetails()) {
-        // 2. 한글명(description)으로 Enum을 찾아오는 안전한 방식 사용
-        ChangeProperty property = Arrays.stream(ChangeProperty.values())
-            .filter(p -> p.getDescription().equals(detailDto.getPropertyName()))
-            .findFirst()
-            .orElseThrow(() -> new BusinessException(ErrorCode.CHANGELOG_INVALID_PROPERTY_NAME));
-
-        ChangeDetailLog detailLog = ChangeDetailLog.builder()
-            .propertyName(property)
-            .before(detailDto.getBefore())
-            .after(detailDto.getAfter())
-            .build();
-        changeLog.addDetail(detailLog);
-      }
-    }
-    changeLogRepository.save(changeLog);
-  }
-
+  /**
+   * 1. 이력 목록 조회 (복합 커서 페이징 적용)
+   */
   public PageResponse<ChangeLogResponseDto.ListInfo> getLogList(ChangeLogRequestDto.Search searchRequest) {
-    int size = (searchRequest.getSize() == null || searchRequest.getSize() < 1) ? 10 : Math.min(searchRequest.getSize(), 100);
-    String directionStr = (searchRequest.getSortDirection() != null) ? searchRequest.getSortDirection().toUpperCase() : "DESC";
-    boolean isAsc = "ASC".equals(directionStr);
 
-    Long reqCursor = searchRequest.getIdAfter();
-    if (reqCursor == null && searchRequest.getCursor() != null) {
-      try {
-        reqCursor = Long.parseLong(searchRequest.getCursor());
-      } catch (NumberFormatException e) {
-        throw new BusinessException(ErrorCode.CHANGELOG_INVALID_CURSOR);
-      }
+    // 페이지 사이즈 설정
+    int size = (searchRequest.getSize() == null || searchRequest.getSize() < 1)
+        ? 10 : Math.min(searchRequest.getSize(), 100);
+    PageRequest pageRequest = PageRequest.of(0, size);
+
+    // 커서 파라미터 초기화
+    Instant atAfter = null;
+    String ipAfter = null;
+    Long idAfter = Long.MAX_VALUE;
+
+    // 커서 데이터 조회 및 기준값 추출
+    if (searchRequest.getIdAfter() != null) {
+      ChangeLog cursorEntity = changeLogRepository.findById(searchRequest.getIdAfter())
+          .orElseThrow(() -> new BusinessException(ErrorCode.CHANGELOG_INVALID_CURSOR));
+
+      atAfter = cursorEntity.getCreatedAt();
+      ipAfter = cursorEntity.getIpAddress();
+      idAfter = cursorEntity.getId();
     }
 
-    Long cursorId;
-    PageRequest pageRequest;
     Slice<ChangeLog> logSlice;
 
-    // 3. ASC/DESC에 따른 메서드 호출 오류 수정
-    if (isAsc) {
-      cursorId = reqCursor != null ? reqCursor : 0L;
-      pageRequest = PageRequest.of(0, size, Sort.by(Sort.Direction.ASC, "id"));
-      logSlice = changeLogRepository.findByCursorPagingAsc( // Asc 호출로 수정
-          cursorId, searchRequest.getEmployeeNumber(), searchRequest.getMemo(), searchRequest.getIpAddress(),
-          searchRequest.getType(), searchRequest.getAtFrom(), searchRequest.getAtTo(), pageRequest
+    // 정렬 조건에 따른 메서드 분기
+    if ("ipAddress".equals(searchRequest.getSortField())) {
+      logSlice = changeLogRepository.findByCursorIpDesc(
+          ipAfter, idAfter, searchRequest.getEmployeeNumber(), searchRequest.getMemo(),
+          searchRequest.getIpAddress(), searchRequest.getType(),
+          searchRequest.getAtFrom(), searchRequest.getAtTo(), pageRequest
       );
     } else {
-      cursorId = reqCursor != null ? reqCursor : Long.MAX_VALUE;
-      pageRequest = PageRequest.of(0, size, Sort.by(Sort.Direction.DESC, "id"));
-      logSlice = changeLogRepository.findByCursorPagingDesc( // Desc 호출로 수정
-          cursorId, searchRequest.getEmployeeNumber(), searchRequest.getMemo(), searchRequest.getIpAddress(),
-          searchRequest.getType(), searchRequest.getAtFrom(), searchRequest.getAtTo(), pageRequest
+      logSlice = changeLogRepository.findByCursorAtDesc(
+          atAfter, idAfter, searchRequest.getEmployeeNumber(), searchRequest.getMemo(),
+          searchRequest.getIpAddress(), searchRequest.getType(),
+          searchRequest.getAtFrom(), searchRequest.getAtTo(), pageRequest
       );
     }
 
-    Slice<ChangeLogResponseDto.ListInfo> dtoSlice = logSlice.map(log -> ChangeLogResponseDto.ListInfo.builder()
-        .id(log.getId())
-        .type(log.getType())
-        .employeeNumber(log.getEmployee().getEmployeeNumber())
-        .memo(log.getMemo())
-        .ipAddress(log.getIpAddress())
-        .at(log.getCreatedAt())
-        .build()
-    );
+    // 엔티티 -> DTO 변환 (NPE 방어 로직 적용)
+    Slice<ChangeLogResponseDto.ListInfo> dtoSlice = logSlice.map(log -> {
+      String empNum = (log.getEmployee() != null)
+          ? log.getEmployee().getEmployeeNumber()
+          : "Unknown (Deleted)";
 
-    Long nextIdAfter = null;
-    if (dtoSlice.hasNext() && !dtoSlice.isEmpty()) {
-      List<ChangeLogResponseDto.ListInfo> content = dtoSlice.getContent();
-      nextIdAfter = content.get(content.size() - 1).getId();
-    }
+      return ChangeLogResponseDto.ListInfo.builder()
+          .id(log.getId())
+          .type(log.getType())
+          .employeeNumber(empNum)
+          .memo(log.getMemo())
+          .ipAddress(log.getIpAddress())
+          .at(log.getCreatedAt())
+          .build();
+    });
+
+    Long nextIdAfter = (dtoSlice.hasNext() && !dtoSlice.isEmpty())
+        ? dtoSlice.getContent().get(dtoSlice.getContent().size() - 1).getId()
+        : null;
 
     return PageResponse.fromSlice(dtoSlice, null, nextIdAfter);
   }
 
-  public ChangeLogResponseDto.DetailInfo getLogDetail(Long changeLogId) {
-    ChangeLog changeLog = changeLogRepository.findById(changeLogId)
+  /**
+   * 2. 이력 상세 조회
+   */
+  public ChangeLogResponseDto.DetailInfo getLogDetail(Long id) {
+    ChangeLog log = changeLogRepository.findById(id)
         .orElseThrow(() -> new BusinessException(ErrorCode.CHANGELOG_NOT_FOUND));
 
-    List<ChangeDetailLog> details = changeDetailLogRepository.findByChangeLogId(changeLogId);
-
-    List<ChangeLogResponseDto.DetailInfo.DiffItem> diffItems = details.stream()
-        .map(detail -> ChangeLogResponseDto.DetailInfo.DiffItem.builder()
-            .propertyName(detail.getPropertyName().getDescription()) // 4. Enum -> 한글명 변환 추가
-            .before(detail.getBefore())
-            .after(detail.getAfter())
-            .build())
-        .collect(Collectors.toList());
+    // 직원 정보 NPE 방어
+    String empNum = (log.getEmployee() != null) ? log.getEmployee().getEmployeeNumber() : "Unknown";
+    String empName = (log.getEmployee() != null) ? log.getEmployee().getName() : "탈퇴한 사용자";
 
     return ChangeLogResponseDto.DetailInfo.builder()
-        .id(changeLog.getId())
-        .type(changeLog.getType())
-        .employeeNumber(changeLog.getEmployee().getEmployeeNumber())
-        .memo(changeLog.getMemo())
-        .ipAddress(changeLog.getIpAddress())
-        .at(changeLog.getCreatedAt())
-        .employeeName(changeLog.getEmployee().getName())
-        .profileImageId(changeLog.getEmployee().getProfileImage() != null ? changeLog.getEmployee().getProfileImage().getId() : null)
-        .diffs(diffItems)
+        .id(log.getId())
+        .type(log.getType())
+        .employeeNumber(empNum)
+        .employeeName(empName)
+        .memo(log.getMemo())
+        .ipAddress(log.getIpAddress())
+        .at(log.getCreatedAt())
+        // 상세 변경 내역 변환
+        .diffs(log.getDetails().stream()
+            .map(detail -> ChangeLogResponseDto.DetailInfo.DiffItem.builder()
+                .propertyName(detail.getPropertyName().getDescription())
+                .before(detail.getBefore())
+                .after(detail.getAfter())
+                .build())
+            .collect(Collectors.toList()))
         .build();
   }
 
+  /**
+   * 3. 수정 이력 건수 조회
+   */
   public long getLogCount(Instant fromDate, Instant toDate) {
-    Instant end = toDate != null ? toDate : Instant.now();
-    Instant start = fromDate != null ? fromDate : end.minus(7, ChronoUnit.DAYS);
+    // null 체크 후 범위 설정
+    Instant start = (fromDate != null) ? fromDate : Instant.parse("1970-01-01T00:00:00Z");
+    Instant end = (toDate != null) ? toDate : Instant.now();
+
     return changeLogRepository.countByCreatedAtBetween(start, end);
   }
 }
