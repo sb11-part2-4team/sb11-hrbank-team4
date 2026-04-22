@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sb11.hr_bank.domain.changelogs.dto.request.ChangeLogRequestDto;
 import com.sb11.hr_bank.domain.changelogs.entity.ChangeLogType;
+import com.sb11.hr_bank.domain.changelogs.entity.ChangeProperty;
 import com.sb11.hr_bank.domain.changelogs.service.ChangeLogService;
 import com.sb11.hr_bank.domain.department.entity.Department;
 import com.sb11.hr_bank.domain.department.repository.DepartmentRepository;
@@ -92,13 +93,13 @@ public class EmployeeService {
             employeeRepository.save(employee);
 
             List<ChangeLogRequestDto.Create.Detail> details = new ArrayList<>();
-            details.add(detail("이름", null, employee.getName()));
-            details.add(detail("이메일", null, employee.getEmail()));
-            details.add(detail("부서", null, employee.getDepartment().getName()));
-            details.add(detail("직함", null, employee.getPosition()));
-            details.add(detail("고용일", null, employee.getHireDate().toString()));
-            details.add(detail("상태", null, employee.getEmployeeStatus().getLabel()));
-            addDetailIfChanged(details, "프로필", null, profileIdText(file));
+            details.add(detail(ChangeProperty.NAME, null, employee.getName()));
+            details.add(detail(ChangeProperty.EMAIL, null, employee.getEmail()));
+            details.add(detail(ChangeProperty.DEPARTMENT, null, employee.getDepartment().getName()));
+            details.add(detail(ChangeProperty.POSITION, null, employee.getPosition()));
+            details.add(detail(ChangeProperty.HIRE_DATE, null, employee.getHireDate().toString()));
+            details.add(detail(ChangeProperty.STATUS, null, employee.getEmployeeStatus().name()));
+            addDetailIfChanged(details, ChangeProperty.PROFILE, null, profileIdText(file));
             createChangeLog(employee, ChangeLogType.CREATED, dto.memo(), details);
 
             return employeeMapper.toDto(employee);
@@ -296,7 +297,7 @@ public class EmployeeService {
         String beforeDepartmentName = employee.getDepartment().getName();
         String beforePosition = employee.getPosition();
         String beforeHireDate = employee.getHireDate().toString();
-        String beforeStatus = employee.getEmployeeStatus().getLabel();
+        String beforeStatus = employee.getEmployeeStatus().name();
         String beforeProfileId = profileIdText(employee.getProfileImage());
 
         FileEntity oldProfile = employee.getProfileImage();
@@ -320,13 +321,13 @@ public class EmployeeService {
             }
 
             List<ChangeLogRequestDto.Create.Detail> details = new ArrayList<>();
-            addDetailIfChanged(details, "이름", beforeName, employee.getName());
-            addDetailIfChanged(details, "이메일", beforeEmail, employee.getEmail());
-            addDetailIfChanged(details, "부서", beforeDepartmentName, employee.getDepartment().getName());
-            addDetailIfChanged(details, "직함", beforePosition, employee.getPosition());
-            addDetailIfChanged(details, "고용일", beforeHireDate, employee.getHireDate().toString());
-            addDetailIfChanged(details, "상태", beforeStatus, employee.getEmployeeStatus().getLabel());
-            addDetailIfChanged(details, "프로필", beforeProfileId, profileIdText(employee.getProfileImage()));
+            addDetailIfChanged(details, ChangeProperty.NAME, beforeName, employee.getName());
+            addDetailIfChanged(details, ChangeProperty.EMAIL, beforeEmail, employee.getEmail());
+            addDetailIfChanged(details, ChangeProperty.DEPARTMENT, beforeDepartmentName, employee.getDepartment().getName());
+            addDetailIfChanged(details, ChangeProperty.POSITION, beforePosition, employee.getPosition());
+            addDetailIfChanged(details, ChangeProperty.HIRE_DATE, beforeHireDate, employee.getHireDate().toString());
+            addDetailIfChanged(details, ChangeProperty.STATUS, beforeStatus, employee.getEmployeeStatus().name());
+            addDetailIfChanged(details, ChangeProperty.PROFILE, beforeProfileId, profileIdText(employee.getProfileImage()));
             if(!details.isEmpty()) createChangeLog(employee, ChangeLogType.UPDATED, dto.memo(), details);
 
             return employeeMapper.toDto(employee);
@@ -344,13 +345,13 @@ public class EmployeeService {
         FileEntity profile = employee.getProfileImage();
 
         List<ChangeLogRequestDto.Create.Detail> details = new ArrayList<>();
-        details.add(detail("이름", employee.getName(), null));
-        details.add(detail("이메일", employee.getEmail(), null));
-        details.add(detail("부서", employee.getDepartment().getName(), null));
-        details.add(detail("직함", employee.getPosition(), null));
-        details.add(detail("고용일", employee.getHireDate().toString(), null));
-        details.add(detail("상태", employee.getEmployeeStatus().getLabel(), null));
-        addDetailIfChanged(details, "프로필", profileIdText(profile), null);
+        details.add(detail(ChangeProperty.NAME, employee.getName(), null));
+        details.add(detail(ChangeProperty.EMAIL, employee.getEmail(), null));
+        details.add(detail(ChangeProperty.DEPARTMENT, employee.getDepartment().getName(), null));
+        details.add(detail(ChangeProperty.POSITION, employee.getPosition(), null));
+        details.add(detail(ChangeProperty.HIRE_DATE, employee.getHireDate().toString(), null));
+        details.add(detail(ChangeProperty.STATUS, employee.getEmployeeStatus().name(), null));
+        addDetailIfChanged(details, ChangeProperty.PROFILE, profileIdText(profile), null);
         createChangeLog(employee, ChangeLogType.DELETED, null, details);
 
         employeeRepository.delete(employee);
@@ -482,9 +483,9 @@ public class EmployeeService {
         }
     }
 
-    private ChangeLogRequestDto.Create.Detail detail(String propertyName, String before, String after) {
+    private ChangeLogRequestDto.Create.Detail detail(ChangeProperty propertyName, String before, String after) {
         return ChangeLogRequestDto.Create.Detail.builder()
-                .propertyName(propertyName)
+                .propertyName(propertyName.name())
                 .before(before)
                 .after(after)
                 .build();
@@ -492,7 +493,7 @@ public class EmployeeService {
 
     private void addDetailIfChanged(
             List<ChangeLogRequestDto.Create.Detail> details,
-            String propertyName,
+            ChangeProperty propertyName,
             String before,
             String after
     ) {
