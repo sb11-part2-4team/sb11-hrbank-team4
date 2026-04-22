@@ -3,19 +3,6 @@
 HR Bank는 기업의 인사 정보를 관리하기 위한 백엔드 시스템입니다.  
 직원, 부서, 직원 정보 변경 이력, 데이터 백업, 파일 다운로드 기능을 제공하며, OpenAPI 명세 기반의 REST API로 구성되어 있습니다.
 
-## 팀 정보
-
-팀명: HR Bank Team 4
-
-| 이름 | 주요 담당 기능 |
-| --- | --- |
-| 최우준 | 부서 관리 |
-| 김태훈 | 직원 정보 관리 |
-| 김지성 | 파일 관리 |
-| 최광호 | 직원 정보 수정 이력 관리 |
-| 김명근 | 데이터 백업 관리 |
-| 최정윤 | 공통 영역 구현 및 처리 |
-
 ## 주요 기능
 
 - 직원 등록, 조회, 수정, 삭제
@@ -127,6 +114,9 @@ http://localhost:8080
 | GET | `/api/employees/{id}` | 직원 상세 조회 |
 | PATCH | `/api/employees/{id}` | 직원 수정 |
 | DELETE | `/api/employees/{id}` | 직원 삭제 |
+| GET | `/api/employees/count` | 직원 수 조회 |
+| GET | `/api/employees/stats/distribution` | 직원 분포 조회 |
+| GET | `/api/employees/stats/trend` | 직원 수 추이 조회 |
 
 직원 등록과 수정은 `multipart/form-data` 형식을 사용합니다.
 
@@ -159,6 +149,7 @@ RESIGNED
 | --- | --- | --- |
 | GET | `/api/change-logs` | 직원 정보 수정 이력 목록 조회 |
 | GET | `/api/change-logs/{id}` | 직원 정보 수정 이력 상세 조회 |
+| GET | `/api/change-logs/count` | 수정 이력 건수 조회 |
 
 직원 생성, 수정, 삭제 시 변경 이력이 기록됩니다.  
 상세 조회에서는 변경된 필드의 이전 값과 이후 값을 확인할 수 있습니다.
@@ -177,6 +168,7 @@ DELETED
 | --- | --- | --- |
 | GET | `/api/backups` | 데이터 백업 목록 조회 |
 | POST | `/api/backups` | 데이터 백업 생성 |
+| GET | `/api/backups/latest` | 최근 백업 정보 조회 |
 
 백업 상태는 다음 값을 사용합니다.
 
@@ -194,18 +186,6 @@ SKIPPED
 backup:
   interval-ms: 3600000
 ```
-
-### 대시보드/통계 관리
-
-| Method | Endpoint | 설명 |
-| --- | --- | --- |
-| GET | `/api/employees/count` | 조건별 직원 수 조회 |
-| GET | `/api/change-logs/count` | 수정 이력 건수 조회 |
-| GET | `/api/backups/latest` | 최근 백업 정보 조회 |
-| GET | `/api/employees/stats/trend` | 직원 수 추이 조회 |
-| GET | `/api/employees/stats/distribution` | 직원 분포 조회 |
-
-대시보드는 총 직원 수, 최근 일주일 수정 이력 건수, 이번 달 입사자 수, 마지막 백업 시간, 최근 1년 월별 직원 수 변동 추이, 부서별 직원 분포, 직무별 직원 분포 정보를 제공합니다.
 
 ### 파일 관리
 
@@ -359,28 +339,11 @@ status
 
 ## 통계 API
 
-통계 API는 대시보드 화면을 구성하는 지표성 데이터를 제공합니다.
-
 ### 직원 수 조회
 
 `/api/employees/count`
 
-상태와 입사일 기간을 기준으로 직원 수를 조회할 수 있습니다.  
-파라미터 없이 호출하면 총 직원 수를 조회하고, 입사일 기간을 이번 달로 지정하면 이번 달 입사자 수를 조회할 수 있습니다.
-
-### 수정 이력 건수 조회
-
-`/api/change-logs/count`
-
-지정된 기간의 직원 정보 수정 이력 건수를 조회합니다.  
-파라미터를 지정하지 않으면 최근 일주일 데이터를 기준으로 건수를 반환합니다.
-
-### 최근 백업 정보 조회
-
-`/api/backups/latest`
-
-지정된 상태의 가장 최근 백업 정보를 조회합니다.  
-상태를 지정하지 않으면 성공적으로 완료된 마지막 백업 정보를 반환하며, 대시보드의 마지막 백업 시간으로 활용됩니다.
+상태와 입사일 기간을 기준으로 직원 수를 조회할 수 있습니다.
 
 ### 직원 분포 조회
 
