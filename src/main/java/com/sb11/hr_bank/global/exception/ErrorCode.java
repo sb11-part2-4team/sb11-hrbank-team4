@@ -37,6 +37,8 @@ public enum ErrorCode {
   // changeLogs
   //EXAMPLE_DEPARTMENT_ERROR(500, "C001", "예시 메시지"),
   CHANGELOG_NOT_FOUND(404, "C001", "해당 이력을 찾을 수 없습니다."),
+  CHANGELOG_INVALID_CURSOR(400, "C002", "잘못된 커서 값입니다."),
+  CHANGELOG_INVALID_PROPERTY_NAME(400, "C003", "알 수 없는 수정항목입니다."),
 
   // file
   FILE_EMPTY(400, "F001", "업로드 된 파일이 없습니다."),

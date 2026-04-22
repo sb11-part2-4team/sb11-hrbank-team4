@@ -14,12 +14,11 @@ public class ChangeLogResponseDto {
   @Builder
   public static class ListInfo {
     private Long id;
-    private Long employeeId;
     private ChangeLogType type;
+    private String employeeNumber;
     private String memo;
     private String ipAddress;
-    private Instant createdAt;
-
+    private Instant at;
   }
 
   // 상세 조회용 DTO
@@ -28,11 +27,18 @@ public class ChangeLogResponseDto {
   public static class DetailInfo {
 
     private Long id;
-    private List<DetailItem> details;
+    private ChangeLogType type;
+    private String employeeNumber;
+    private String memo;
+    private String ipAddress;
+    private Instant at;
+    private String employeeName;
+    private Long profileImageId;
+    private List<DiffItem> diffs;
 
     @Getter
     @Builder
-    public static class DetailItem{
+    public static class DiffItem{
       private String propertyName;
       private String before;
       private String after;
