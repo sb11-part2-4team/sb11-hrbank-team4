@@ -81,7 +81,7 @@ public class BackupController {
     }
 
     // localhost에서 테스트 시 IPV6 루프백 주소를 IPV4 주소로 변환
-    if ("0:0:0:0:0:1".equals(ip) || "::1".equals(ip)) {
+    if ("0:0:0:0:0:0:0:1".equals(ip) || "::1".equals(ip)) {
       return "127.0.0.1";
     }
 
