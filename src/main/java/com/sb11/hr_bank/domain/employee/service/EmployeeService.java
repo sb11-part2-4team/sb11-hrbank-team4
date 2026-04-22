@@ -99,7 +99,7 @@ public class EmployeeService {
             details.add(detail("고용일", null, employee.getHireDate().toString()));
             details.add(detail("상태", null, employee.getEmployeeStatus().getLabel()));
             addDetailIfChanged(details, "프로필", null, profileIdText(file));
-            createChangeLog(employee, ChangeLogType.ADD, dto.memo(), details);
+            createChangeLog(employee, ChangeLogType.CREATED, dto.memo(), details);
 
             return employeeMapper.toDto(employee);
         } catch (RuntimeException e) {
@@ -327,7 +327,7 @@ public class EmployeeService {
             addDetailIfChanged(details, "고용일", beforeHireDate, employee.getHireDate().toString());
             addDetailIfChanged(details, "상태", beforeStatus, employee.getEmployeeStatus().getLabel());
             addDetailIfChanged(details, "프로필", beforeProfileId, profileIdText(employee.getProfileImage()));
-            if(!details.isEmpty()) createChangeLog(employee, ChangeLogType.UPDATE, dto.memo(), details);
+            if(!details.isEmpty()) createChangeLog(employee, ChangeLogType.UPDATED, dto.memo(), details);
 
             return employeeMapper.toDto(employee);
         } catch (RuntimeException e) {
@@ -351,7 +351,7 @@ public class EmployeeService {
         details.add(detail("고용일", employee.getHireDate().toString(), null));
         details.add(detail("상태", employee.getEmployeeStatus().getLabel(), null));
         addDetailIfChanged(details, "프로필", profileIdText(profile), null);
-        createChangeLog(employee, ChangeLogType.DELETE, null, details);
+        createChangeLog(employee, ChangeLogType.DELETED, null, details);
 
         employeeRepository.delete(employee);
         employeeRepository.flush();
