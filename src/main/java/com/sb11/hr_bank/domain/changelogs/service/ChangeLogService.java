@@ -65,7 +65,7 @@ public class ChangeLogService {
       );
     }
 
-    // 엔티티 -> DTO 변환 (NPE 방어 로직 적용)
+    // NPE 방어
     Slice<ChangeLogResponseDto.ListInfo> dtoSlice = logSlice.map(log -> {
       String empNum = (log.getEmployee() != null)
           ? log.getEmployee().getEmployeeNumber()

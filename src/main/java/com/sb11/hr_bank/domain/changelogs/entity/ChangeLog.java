@@ -19,8 +19,8 @@ public class ChangeLog extends BaseEntity {
   private Long id;
 
   // Employee Entity 연결
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "employee_id", nullable = false)
+  @ManyToOne(fetch = FetchType.LAZY, optional = true)
+  @JoinColumn(name = "employee_id", nullable = true)
   private Employee employee;
 
   @Enumerated(EnumType.STRING)
