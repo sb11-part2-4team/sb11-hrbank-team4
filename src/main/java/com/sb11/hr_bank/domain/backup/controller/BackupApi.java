@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 // @Tag : 도메인 이름과 도메인 설명
-// @Opreation : 어떤 역할을 하는지 요약과 상세
+// @Operation : 어떤 역할을 하는지 요약과 상세
 // @ApiResponses : 2개 이상의 @ApiResponse를 사용할 경우 사용
 // @ApiResponse : 발생하는 응답코드와 응답코드에 대한 설명
 // @Parameter : 매개변수에 대한 이름과 설명
