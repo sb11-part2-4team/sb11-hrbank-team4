@@ -4,6 +4,7 @@ import com.sb11.hr_bank.domain.changelogs.dto.request.ChangeLogRequestDto;
 import com.sb11.hr_bank.domain.changelogs.dto.response.ChangeLogResponseDto;
 import com.sb11.hr_bank.domain.changelogs.entity.ChangeDetailLog;
 import com.sb11.hr_bank.domain.changelogs.entity.ChangeLog;
+import com.sb11.hr_bank.domain.changelogs.entity.ChangeProperty;
 import com.sb11.hr_bank.domain.changelogs.repository.ChangeLogRepository;
 import com.sb11.hr_bank.domain.changelogs.repository.ChangeDetailLogRepository;
 import com.sb11.hr_bank.domain.employee.entity.Employee;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -32,13 +34,13 @@ public class ChangeLogService {
   private final ChangeDetailLogRepository changeDetailLogRepository;
   private final EmployeeRepository employeeRepository;
 
-  // 이력 등록
   @Transactional
   public void createLog(ChangeLogRequestDto.Create request, String ipAddress) {
-    // Employee 검증, 없으면 글로벌 예외
-    // 프록시 객체만 가져와서 매핑
-    Employee employee = employeeRepository.findById(request.getEmployeeId())
-        .orElseThrow(() -> new BusinessException(ErrorCode.EMPLOYEE_NOT_FOUND));
+    // 1. 실제로 직원이 존재하는지 체크는 하되, 연관관계는 프록시로 세팅 (성능 최적화)
+    if (!employeeRepository.existsById(request.getEmployeeId())) {
+      throw new BusinessException(ErrorCode.EMPLOYEE_NOT_FOUND);
+    }
+    Employee employee = employeeRepository.getReferenceById(request.getEmployeeId());
 
     ChangeLog changeLog = ChangeLog.builder()
         .employee(employee)
@@ -49,76 +51,58 @@ public class ChangeLogService {
 
     if (request.getDetails() != null) {
       for (ChangeLogRequestDto.Create.Detail detailDto : request.getDetails()) {
+        // 2. 한글명(description)으로 Enum을 찾아오는 안전한 방식 사용
+        ChangeProperty property = Arrays.stream(ChangeProperty.values())
+            .filter(p -> p.getDescription().equals(detailDto.getPropertyName()))
+            .findFirst()
+            .orElseThrow(() -> new BusinessException(ErrorCode.CHANGELOG_INVALID_PROPERTY_NAME));
+
         ChangeDetailLog detailLog = ChangeDetailLog.builder()
-            .propertyName(detailDto.getPropertyName())
+            .propertyName(property)
             .before(detailDto.getBefore())
             .after(detailDto.getAfter())
             .build();
         changeLog.addDetail(detailLog);
       }
     }
-
     changeLogRepository.save(changeLog);
-
   }
 
-  // 이력 목록 조회 (커서 페이징 처리)
   public PageResponse<ChangeLogResponseDto.ListInfo> getLogList(ChangeLogRequestDto.Search searchRequest) {
     int size = (searchRequest.getSize() == null || searchRequest.getSize() < 1) ? 10 : Math.min(searchRequest.getSize(), 100);
-    String directionStr = searchRequest.getSortDirection() != null ? searchRequest.getSortDirection().toUpperCase() : "DESC";
+    String directionStr = (searchRequest.getSortDirection() != null) ? searchRequest.getSortDirection().toUpperCase() : "DESC";
     boolean isAsc = "ASC".equals(directionStr);
 
-    //idAfter, cursor 둘 다 지원하게 처리
-    Long reqCursor = searchRequest.getIdAfter() != null ? searchRequest.getIdAfter() :
-        (searchRequest.getCursor() != null ? Long.parseLong(searchRequest.getCursor()) : null);
+    Long reqCursor = searchRequest.getIdAfter();
+    if (reqCursor == null && searchRequest.getCursor() != null) {
+      try {
+        reqCursor = Long.parseLong(searchRequest.getCursor());
+      } catch (NumberFormatException e) {
+        throw new BusinessException(ErrorCode.CHANGELOG_INVALID_CURSOR);
+      }
+    }
 
     Long cursorId;
     PageRequest pageRequest;
     Slice<ChangeLog> logSlice;
 
+    // 3. ASC/DESC에 따른 메서드 호출 오류 수정
     if (isAsc) {
       cursorId = reqCursor != null ? reqCursor : 0L;
       pageRequest = PageRequest.of(0, size, Sort.by(Sort.Direction.ASC, "id"));
-      logSlice = changeLogRepository.findByCursorPagingDesc(
-          cursorId, searchRequest.getEmployeeNumber(), searchRequest.getMemo(), searchRequest.getIpAddress(), searchRequest.getType(), searchRequest.getAtForm(), searchRequest.getAtTo(), pageRequest
+      logSlice = changeLogRepository.findByCursorPagingAsc( // Asc 호출로 수정
+          cursorId, searchRequest.getEmployeeNumber(), searchRequest.getMemo(), searchRequest.getIpAddress(),
+          searchRequest.getType(), searchRequest.getAtFrom(), searchRequest.getAtTo(), pageRequest
       );
     } else {
       cursorId = reqCursor != null ? reqCursor : Long.MAX_VALUE;
       pageRequest = PageRequest.of(0, size, Sort.by(Sort.Direction.DESC, "id"));
-      logSlice = changeLogRepository.findByCursorPagingAsc(
-          cursorId, searchRequest.getEmployeeNumber(), searchRequest.getMemo(), searchRequest.getIpAddress(), searchRequest.getType(), searchRequest.getAtForm(), searchRequest.getAtTo(), pageRequest
+      logSlice = changeLogRepository.findByCursorPagingDesc( // Desc 호출로 수정
+          cursorId, searchRequest.getEmployeeNumber(), searchRequest.getMemo(), searchRequest.getIpAddress(),
+          searchRequest.getType(), searchRequest.getAtFrom(), searchRequest.getAtTo(), pageRequest
       );
     }
 
-
-
-
-/*
-    // 정렬 로직
-    // sortBy 필드를 Pageable Sort로 반영 "id"로 줘서 동시간대 여러개 들어와도 id순으로 정렬
-    Sort sort = Sort.by(Sort.Direction.DESC, "id");
-    if (searchRequest.getSortBy() != null) {
-      // sortDirection 안들어오면 기본값으로 DESC 사용
-      String directionStr = searchRequest.getSortDirection() != null ? searchRequest.getSortDirection() : "DESC";
-      sort = Sort.by(Sort.Direction.fromString(directionStr), searchRequest.getSortBy());
-    }
-
-    PageRequest pageRequest = PageRequest.of(0, size, sort);
-
-    Slice<ChangeLog> logSlice = changeLogRepository.findByCursorPaging(
-        cursorId,
-        searchRequest.getEmployeeId(),
-        searchRequest.getMemo(),
-        searchRequest.getIpAddress(),
-        searchRequest.getType(),
-        searchRequest.getStartDate(),
-        searchRequest.getEndDate(),
-        pageRequest
-    );
-    */
-
-
-    // Slice<DTO>
     Slice<ChangeLogResponseDto.ListInfo> dtoSlice = logSlice.map(log -> ChangeLogResponseDto.ListInfo.builder()
         .id(log.getId())
         .type(log.getType())
@@ -129,7 +113,6 @@ public class ChangeLogService {
         .build()
     );
 
-    // 다음 커서 ID 구하기
     Long nextIdAfter = null;
     if (dtoSlice.hasNext() && !dtoSlice.isEmpty()) {
       List<ChangeLogResponseDto.ListInfo> content = dtoSlice.getContent();
@@ -139,47 +122,36 @@ public class ChangeLogService {
     return PageResponse.fromSlice(dtoSlice, null, nextIdAfter);
   }
 
-    // 이력 상세 내용 조회
-    public ChangeLogResponseDto.DetailInfo getLogDetail(Long changeLogId) {
-      // ChangeLog 엔티티가 존재하는지 확인, 없으면 에러
-      /*
-      if (!changeLogRepository.existsById(changeLogId)) {
-        throw new BusinessException(ErrorCode.CHANGELOG_NOT_FOUND);
-      }
-      */
+  public ChangeLogResponseDto.DetailInfo getLogDetail(Long changeLogId) {
+    ChangeLog changeLog = changeLogRepository.findById(changeLogId)
+        .orElseThrow(() -> new BusinessException(ErrorCode.CHANGELOG_NOT_FOUND));
 
-      ChangeLog changeLog = changeLogRepository.findById(changeLogId).orElseThrow(() -> new BusinessException(ErrorCode.CHANGELOG_NOT_FOUND));
+    List<ChangeDetailLog> details = changeDetailLogRepository.findByChangeLogId(changeLogId);
 
-      // ChangeDetailLog 조회, 없으면 빈 리스트
-      List<ChangeDetailLog> details = changeDetailLogRepository.findByChangeLogId(changeLogId);
+    List<ChangeLogResponseDto.DetailInfo.DiffItem> diffItems = details.stream()
+        .map(detail -> ChangeLogResponseDto.DetailInfo.DiffItem.builder()
+            .propertyName(detail.getPropertyName().getDescription()) // 4. Enum -> 한글명 변환 추가
+            .before(detail.getBefore())
+            .after(detail.getAfter())
+            .build())
+        .collect(Collectors.toList());
 
-      // DTO 변환
-      List<ChangeLogResponseDto.DetailInfo.DiffItem> diffItems = details.stream()
-          .map(detail -> ChangeLogResponseDto.DetailInfo.DiffItem.builder()
-              .propertyName(detail.getPropertyName())
-              .before(detail.getBefore())
-              .after(detail.getAfter())
-              .build())
-          .collect(Collectors.toList());
+    return ChangeLogResponseDto.DetailInfo.builder()
+        .id(changeLog.getId())
+        .type(changeLog.getType())
+        .employeeNumber(changeLog.getEmployee().getEmployeeNumber())
+        .memo(changeLog.getMemo())
+        .ipAddress(changeLog.getIpAddress())
+        .at(changeLog.getCreatedAt())
+        .employeeName(changeLog.getEmployee().getName())
+        .profileImageId(changeLog.getEmployee().getProfileImage() != null ? changeLog.getEmployee().getProfileImage().getId() : null)
+        .diffs(diffItems)
+        .build();
+  }
 
-      return ChangeLogResponseDto.DetailInfo.builder()
-          .id(changeLogId)
-          .type(changeLog.getType())
-          .employeeNumber(changeLog.getEmployee().getEmployeeNumber())
-          .memo(changeLog.getMemo())
-          .ipAddress(changeLog.getIpAddress())
-          .at(changeLog.getCreatedAt())
-          .employeeName(changeLog.getEmployee().getName())
-          .profileImageId(changeLog.getEmployee().getProfileImage())
-          .diffs(diffItems) // 상세 내역 없으면 빈 배열로 JSON 응답
-          .build();
-    }
-
-    public long getLogCount(Instant fromDate, Instant toDate) {
-      Instant end = toDate != null ? toDate : Instant.now();
-      Instant start = fromDate != null ? fromDate : end.minus(7, ChronoUnit.DAYS);
-      return changeLogRepository.countByCreatedAtBetween(start, end);
-    }
-
-
+  public long getLogCount(Instant fromDate, Instant toDate) {
+    Instant end = toDate != null ? toDate : Instant.now();
+    Instant start = fromDate != null ? fromDate : end.minus(7, ChronoUnit.DAYS);
+    return changeLogRepository.countByCreatedAtBetween(start, end);
+  }
 }

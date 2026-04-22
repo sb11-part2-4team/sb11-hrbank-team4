@@ -39,7 +39,7 @@ public class ChangeLogRequestDto {
     private ChangeLogType type;
     private String memo;
     private String ipAddress;
-    private Instant atForm;
+    private Instant atFrom;
     private Instant atTo;
 
     // 이전 페이지 마지막 요소 ID (커서)

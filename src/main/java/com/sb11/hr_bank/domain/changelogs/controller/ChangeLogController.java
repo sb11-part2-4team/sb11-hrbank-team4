@@ -44,6 +44,10 @@ public class ChangeLogController {
       @RequestParam(required = false) Instant fromDate,
       @RequestParam(required = false) Instant toDate
   ) {
+    // fromDate > toDate 검증
+    if (fromDate != null && toDate != null && fromDate.isAfter(toDate)) {
+      return ResponseEntity.badRequest().build();
+    }
     long count = changeLogService.getLogCount(fromDate, toDate);
     return ResponseEntity.ok(count);
   }

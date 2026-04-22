@@ -23,8 +23,7 @@ public class ChangeLog extends BaseEntity {
   @JoinColumn(name = "employee_id", nullable = false)
   private Employee employee;
 
-  // @Enumerated(EnumType.STRING) - DB 확인 후 어노테이션 삭제 + 컨버터 클래스 생성
-  @Convert(converter = ChangeLogTypeConverter.class)
+  @Enumerated(EnumType.STRING)
   @Column(name = "type", nullable = false, length = 20)
   private ChangeLogType type;
 
