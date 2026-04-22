@@ -19,6 +19,8 @@ import com.sb11.hr_bank.global.exception.BusinessException;
 import com.sb11.hr_bank.global.exception.ErrorCode;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.List;
@@ -106,7 +108,12 @@ public class BasicBackupService implements BackupService {
       // CSV 파일로 사원 백업 데이터를 CSV 파일로 변환
       byte[] csvData = sb.toString().getBytes(StandardCharsets.UTF_8);
 
-      csvFile = fileService.saveInternalData("backup_data.csv", "text/csv", csvData);
+      // 파일 이름 설정 employee_backup_(backupId)_(서울 기준 현재 시간).csv
+      String timestamp = LocalDateTime.now(ZoneId.of("Asia/Seoul"))
+          .format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_SSS"));
+      String fileName = "employee_backup_" + backupId + "_" + timestamp + ".csv";
+
+      csvFile = fileService.saveInternalData(fileName, "text/csv", csvData);
 
       // 백업 완료(COMPLETED 상태)
       Backup completed = backupTxService.complete(backupId, csvFile);
