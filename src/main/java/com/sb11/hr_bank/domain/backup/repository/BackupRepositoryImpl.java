@@ -10,19 +10,22 @@ import com.sb11.hr_bank.domain.backup.entity.Backup;
 import com.sb11.hr_bank.domain.backup.entity.BackupStatus;
 import com.sb11.hr_bank.domain.backup.entity.QBackup;
 import com.sb11.hr_bank.domain.backup.query.BackupSortDirection;
+import jakarta.persistence.EntityManager;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
 
-@RequiredArgsConstructor
 public class BackupRepositoryImpl implements BackupRepositoryCustom {
 
   private final JPAQueryFactory queryFactory;
   private final QBackup b = QBackup.backup;
+
+  public BackupRepositoryImpl(EntityManager entityManager) {
+    this.queryFactory = new JPAQueryFactory(entityManager);
+  }
 
   @Override
   public Slice<Backup> search(BackupSearchCondition condition, BackupCursor cursor) {

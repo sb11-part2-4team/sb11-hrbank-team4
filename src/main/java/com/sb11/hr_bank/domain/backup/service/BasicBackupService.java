@@ -225,7 +225,7 @@ public class BasicBackupService implements BackupService {
       String json = objectMapper.writeValueAsString(cursor);
       return Base64.getEncoder().encodeToString(json.getBytes(StandardCharsets.UTF_8));
     } catch (Exception e) {
-      throw new RuntimeException("Cursor encode 실패");
+      throw new BusinessException(ErrorCode.BACKUP_CURSOR_ENCODE_FAILED);
     }
   }
 
@@ -240,7 +240,7 @@ public class BasicBackupService implements BackupService {
 
       return objectMapper.readValue(json, BackupCursor.class);
     } catch (Exception e) {
-      throw new RuntimeException("Cursor decode 실패");
+      throw new BusinessException(ErrorCode.BACKUP_CURSOR_DECODE_FAILED);
     }
   }
 }

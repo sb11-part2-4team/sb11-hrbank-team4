@@ -3,6 +3,9 @@ package com.sb11.hr_bank.domain.employee.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sb11.hr_bank.domain.changelogs.dto.request.ChangeLogRequestDto;
+import com.sb11.hr_bank.domain.changelogs.entity.ChangeLogType;
+import com.sb11.hr_bank.domain.changelogs.service.ChangeLogService;
 import com.sb11.hr_bank.domain.department.entity.Department;
 import com.sb11.hr_bank.domain.department.repository.DepartmentRepository;
 import com.sb11.hr_bank.domain.employee.dto.EmployeeCountCondition;
@@ -34,6 +37,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
@@ -42,6 +47,7 @@ import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -52,6 +58,7 @@ public class EmployeeService {
     private final EmployeeRepository employeeRepository;
     private final DepartmentRepository departmentRepository;
     private final FileService fileService;
+    private final ChangeLogService changeLogService;
     private final EmployeeMapper employeeMapper;
     private final EmployeePageResponseMapper employeePageResponseMapper;
     private final ObjectMapper objectMapper;
@@ -83,6 +90,16 @@ public class EmployeeService {
                     file
             );
             employeeRepository.save(employee);
+
+            List<ChangeLogRequestDto.Create.Detail> details = new ArrayList<>();
+            details.add(detail("이름", null, employee.getName()));
+            details.add(detail("이메일", null, employee.getEmail()));
+            details.add(detail("부서", null, employee.getDepartment().getName()));
+            details.add(detail("직함", null, employee.getPosition()));
+            details.add(detail("고용일", null, employee.getHireDate().toString()));
+            details.add(detail("상태", null, employee.getEmployeeStatus().getLabel()));
+            addDetailIfChanged(details, "프로필", null, profileIdText(file));
+            createChangeLog(employee, ChangeLogType.ADD, dto.memo(), details);
 
             return employeeMapper.toDto(employee);
         } catch (RuntimeException e) {
@@ -226,25 +243,27 @@ public class EmployeeService {
             throw new BusinessException(ErrorCode.EMPLOYEE_INVALID_DATE_RANGE);
         }
 
-        List<LocalDate> buckets = new ArrayList<>();
-        LocalDate current = from;
+        LocalDate bucketFrom = startOfBucket(from, unit);
+        LocalDate bucketTo = startOfBucket(to, unit);
 
-        while(!current.isAfter(to)) {
+        List<LocalDate> buckets = new ArrayList<>();
+        LocalDate current = bucketFrom;
+
+        while(!current.isAfter(bucketTo)) {
             buckets.add(current);
             current = nextDate(current, unit);
         }
 
         List<EmployeeTrendDto> result = new ArrayList<>();
-        long previousCount = employeeRepository.countByHireDateLessThan(from);
+        long previousCount = employeeRepository.countByHireDateLessThan(bucketFrom);
         long count = previousCount;
 
         for(LocalDate bucket : buckets) {
+            LocalDate bucketStart = bucket.isBefore(bucketFrom) ? bucketFrom : bucket;
             LocalDate bucketEnd = nextDate(bucket, unit).minusDays(1);
-            if(bucketEnd.isAfter(to)) {
-                bucketEnd = to;
-            }
+            bucketEnd = bucketEnd.isAfter(to) ? to : bucketEnd;
 
-            long change = employeeRepository.countByHireDateBetween(bucket, bucketEnd);
+            long change = employeeRepository.countByHireDateBetween(bucketStart, bucketEnd);
             count += change;
 
             result.add(new EmployeeTrendDto(
@@ -272,6 +291,14 @@ public class EmployeeService {
         Department department = departmentRepository.findById(dto.departmentId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.EMPLOYEE_DEPARTMENT_NOT_FOUND));
 
+        String beforeName = employee.getName();
+        String beforeEmail = employee.getEmail();
+        String beforeDepartmentName = employee.getDepartment().getName();
+        String beforePosition = employee.getPosition();
+        String beforeHireDate = employee.getHireDate().toString();
+        String beforeStatus = employee.getEmployeeStatus().getLabel();
+        String beforeProfileId = profileIdText(employee.getProfileImage());
+
         FileEntity oldProfile = employee.getProfileImage();
         FileEntity newProfile = uploadProfileIfPresent(profile);
         FileEntity fileEntity = newProfile != null ? newProfile : oldProfile;
@@ -292,6 +319,16 @@ public class EmployeeService {
                 fileService.deleteFile(oldProfile.getId());
             }
 
+            List<ChangeLogRequestDto.Create.Detail> details = new ArrayList<>();
+            addDetailIfChanged(details, "이름", beforeName, employee.getName());
+            addDetailIfChanged(details, "이메일", beforeEmail, employee.getEmail());
+            addDetailIfChanged(details, "부서", beforeDepartmentName, employee.getDepartment().getName());
+            addDetailIfChanged(details, "직함", beforePosition, employee.getPosition());
+            addDetailIfChanged(details, "고용일", beforeHireDate, employee.getHireDate().toString());
+            addDetailIfChanged(details, "상태", beforeStatus, employee.getEmployeeStatus().getLabel());
+            addDetailIfChanged(details, "프로필", beforeProfileId, profileIdText(employee.getProfileImage()));
+            if(!details.isEmpty()) createChangeLog(employee, ChangeLogType.UPDATE, dto.memo(), details);
+
             return employeeMapper.toDto(employee);
         } catch (RuntimeException e) {
             cleanupUploadedFile(newProfile);
@@ -305,6 +342,16 @@ public class EmployeeService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.EMPLOYEE_NOT_FOUND));
 
         FileEntity profile = employee.getProfileImage();
+
+        List<ChangeLogRequestDto.Create.Detail> details = new ArrayList<>();
+        details.add(detail("이름", employee.getName(), null));
+        details.add(detail("이메일", employee.getEmail(), null));
+        details.add(detail("부서", employee.getDepartment().getName(), null));
+        details.add(detail("직함", employee.getPosition(), null));
+        details.add(detail("고용일", employee.getHireDate().toString(), null));
+        details.add(detail("상태", employee.getEmployeeStatus().getLabel(), null));
+        addDetailIfChanged(details, "프로필", profileIdText(profile), null);
+        createChangeLog(employee, ChangeLogType.DELETE, null, details);
 
         employeeRepository.delete(employee);
         employeeRepository.flush();
@@ -320,6 +367,17 @@ public class EmployeeService {
         }
 
         return Math.round(value * 1000.0 / total) / 10.0;
+    }
+
+    private LocalDate startOfBucket(LocalDate date, String unit) {
+        return switch (unit) {
+            case "day" -> date;
+            case "week" -> date.minusDays(date.getDayOfWeek().getValue() - 1);
+            case "month" -> date.withDayOfMonth(1);
+            case "quarter" -> date.withMonth(((date.getMonthValue() - 1) / 3) * 3 + 1).withDayOfMonth(1);
+            case "year" -> date.withDayOfYear(1);
+            default -> throw new BusinessException(ErrorCode.EMPLOYEE_INVALID_TREND_UNIT);
+        };
     }
 
     private LocalDate nextDate(LocalDate date, String unit) {
@@ -423,4 +481,56 @@ public class EmployeeService {
             log.warn("업로드 파일 정리 실패. fileId={}", file.getId(), e);
         }
     }
+
+    private ChangeLogRequestDto.Create.Detail detail(String propertyName, String before, String after) {
+        return ChangeLogRequestDto.Create.Detail.builder()
+                .propertyName(propertyName)
+                .before(before)
+                .after(after)
+                .build();
+    }
+
+    private void addDetailIfChanged(
+            List<ChangeLogRequestDto.Create.Detail> details,
+            String propertyName,
+            String before,
+            String after
+    ) {
+        if(!Objects.equals(before, after)) {
+            details.add(detail(propertyName, before, after));
+        }
+    }
+
+    private String profileIdText(FileEntity file) {
+        return file != null && file.getId() != null ? String.valueOf(file.getId()) : null;
+    }
+
+    private void createChangeLog(
+            Employee employee,
+            ChangeLogType type,
+            String memo,
+            List<ChangeLogRequestDto.Create.Detail> details
+    ) {
+        changeLogService.createLog(
+                ChangeLogRequestDto.Create.builder()
+                        .employeeId(employee.getId())
+                        .type(type)
+                        .memo(memo)
+                        .details(details)
+                        .build(),
+                currentIpAddress()
+        );
+    }
+
+    private String currentIpAddress() {
+        if(!(RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes attributes)) {
+            return "127.0.0.1";
+        }
+
+        String ipAddress = attributes.getRequest().getRemoteAddr();
+        return "0:0:0:0:0:0:0:1".equals(ipAddress) || "::1".equals(ipAddress)
+                ? "127.0.0.1"
+                : ipAddress;
+    }
 }
+

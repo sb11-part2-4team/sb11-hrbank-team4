@@ -32,6 +32,8 @@ public record EmployeeUpdateRequest(
         LocalDate hireDate,
 
         @NotNull
-        EmployeeStatus status
+        EmployeeStatus status,
+
+        String memo
 ) {
 }
