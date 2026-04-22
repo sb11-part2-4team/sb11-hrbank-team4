@@ -32,7 +32,7 @@ HR Bank는 기업의 인사 정보를 관리하기 위한 백엔드 시스템입
 ## 기술 스택
 
 - Java 17
-- Spring Boot 3.5
+- Spring Boot 3.5.13
 - Spring Web
 - Spring Data JPA
 - Spring Validation
@@ -41,7 +41,7 @@ HR Bank는 기업의 인사 정보를 관리하기 위한 백엔드 시스템입
 - MapStruct
 - Lombok
 - Springdoc OpenAPI
-- Gradle
+- Gradle 8.14.4
 
 ## 프로젝트 구조
 
@@ -93,28 +93,6 @@ src/main/resources/v1.0.0_hr_bank.sql
 ```
 
 PostgreSQL 데이터베이스에 해당 SQL을 실행한 뒤 애플리케이션을 실행합니다.
-
-
-## API 문서
-
-Springdoc OpenAPI를 통해 API 문서를 확인할 수 있습니다.
-
-```text
-/swagger-ui/index.html
-/v3/api-docs
-```
-
-배포 서버 기준 API Base URL은 다음과 같습니다.
-
-```text
-http://sprint-project-1196140422.ap-northeast-2.elb.amazonaws.com/sb/hrbank
-```
-
-로컬 실행 시에는 일반적으로 다음 주소를 사용합니다.
-
-```text
-http://localhost:8080
-```
 
 ## API 개요
 
@@ -263,154 +241,6 @@ API 오류는 공통 에러 응답 형식으로 반환됩니다.
 | 404 | 리소스를 찾을 수 없음 |
 | 409 | 충돌 상태 |
 | 500 | 서버 오류 |
-
-## 주요 도메인
-
-### Department
-
-부서 정보를 관리합니다.
-
-- 부서명
-- 부서 설명
-- 설립일
-- 소속 직원 수
-
-### Employee
-
-직원 정보를 관리합니다.
-
-- 이름
-- 이메일
-- 사원 번호
-- 부서
-- 직함
-- 입사일
-- 재직 상태
-- 프로필 이미지
-
-### ChangeLog
-
-직원 정보 변경 이력을 관리합니다.
-
-- 변경 유형
-- 대상 직원 사번
-- 메모
-- IP 주소
-- 변경 일시
-- 상세 변경 내역
-
-### Backup
-
-데이터 백업 이력을 관리합니다.
-
-- 작업자
-- 시작 시간
-- 종료 시간
-- 백업 상태
-- 백업 파일
-
-### File
-
-업로드 및 생성된 파일 메타데이터를 관리합니다.
-
-- 파일명
-- Content-Type
-- 파일 크기
-
-## 정렬 기준
-
-### 직원 목록
-
-사용 가능한 정렬 필드:
-
-```text
-name
-employeeNumber
-hireDate
-```
-
-### 부서 목록
-
-사용 가능한 정렬 필드:
-
-```text
-name
-establishedDate
-```
-
-### 수정 이력 목록
-
-사용 가능한 정렬 필드:
-
-```text
-ipAddress
-at
-```
-
-### 백업 목록
-
-사용 가능한 정렬 필드:
-
-```text
-startedAt
-endedAt
-status
-```
-
-## 통계 API
-
-통계 API는 대시보드 화면을 구성하는 지표성 데이터를 제공합니다.
-
-### 직원 수 조회
-
-`/api/employees/count`
-
-상태와 입사일 기간을 기준으로 직원 수를 조회할 수 있습니다.  
-파라미터 없이 호출하면 총 직원 수를 조회하고, 입사일 기간을 이번 달로 지정하면 이번 달 입사자 수를 조회할 수 있습니다.
-
-### 수정 이력 건수 조회
-
-`/api/change-logs/count`
-
-지정된 기간의 직원 정보 수정 이력 건수를 조회합니다.  
-파라미터를 지정하지 않으면 최근 일주일 데이터를 기준으로 건수를 반환합니다.
-
-### 최근 백업 정보 조회
-
-`/api/backups/latest`
-
-지정된 상태의 가장 최근 백업 정보를 조회합니다.  
-상태를 지정하지 않으면 성공적으로 완료된 마지막 백업 정보를 반환하며, 대시보드의 마지막 백업 시간으로 활용됩니다.
-
-### 직원 분포 조회
-
-`/api/employees/stats/distribution`
-
-부서별 또는 직무별 직원 분포를 조회합니다.
-
-사용 가능한 그룹 기준:
-
-```text
-department
-position
-```
-
-### 직원 수 추이 조회
-
-`/api/employees/stats/trend`
-
-기간과 단위를 기준으로 직원 수 추이를 조회합니다.  
-파라미터를 지정하지 않으면 최근 12개월 데이터를 월 단위로 반환합니다.
-
-사용 가능한 단위:
-
-```text
-day
-week
-month
-quarter
-year
-```
 
 ## 파일 저장
 
