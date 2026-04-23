@@ -30,6 +30,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -47,8 +48,9 @@ public class BasicBackupService implements BackupService {
 
 
   @Override
+  @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
   public BackupResponse startBackup(String worker) {
-    
+
     // 백업이 진행중일 경우 백업 생성시 예외 처리
     boolean isInProgress = backupRepository.existsByStatus(BackupStatus.IN_PROGRESS);
 
