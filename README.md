@@ -159,10 +159,10 @@ DELETED
 백업 상태는 다음 값을 사용합니다.
 
 ```text
-IN_PROGRESS
-COMPLETED
-FAILED
-SKIPPED
+IN_PROGRESS : 백업 진행중
+COMPLETED   : 백업 완료
+FAILED      : 백업 실패
+SKIPPED     : 백업을 건너뜀
 ```
 
 백업 완료 시 CSV 파일 형태로 백업 데이터를 제공합니다.  
