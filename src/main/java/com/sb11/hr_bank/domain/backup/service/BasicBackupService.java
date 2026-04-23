@@ -48,7 +48,7 @@ public class BasicBackupService implements BackupService {
 
 
   @Override
-  @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
+  @Transactional(isolation = Isolation.REPEATABLE_READ)
   public BackupResponse startBackup(String worker) {
 
     // 백업이 진행중일 경우 백업 생성시 예외 처리
