@@ -26,6 +26,9 @@ public class ChangeLogService {
   private final ChangeLogRepository changeLogRepository;
   private final EmployeeRepository employeeRepository;
 
+
+
+
   /**
    * 1. 이력 목록 조회 (복합 커서 페이징 적용)
    */
@@ -51,21 +54,40 @@ public class ChangeLogService {
       idAfter = cursorEntity.getId();
     }
 
+    // 프론트 빈 문자열 처리 (비어있으면 null로 치환하여 Repository 쿼리의 IS NULL 조건을 태움)
+    String safeEmpNum = org.springframework.util.StringUtils.hasText(searchRequest.getEmployeeNumber()) ? searchRequest.getEmployeeNumber() : null;
+    String safeMemo = org.springframework.util.StringUtils.hasText(searchRequest.getMemo()) ? searchRequest.getMemo() : null;
+    String safeIp = org.springframework.util.StringUtils.hasText(searchRequest.getIpAddress()) ? searchRequest.getIpAddress() : null;
+
     Slice<ChangeLog> logSlice;
+
+    boolean isAsc = "ASC".equalsIgnoreCase(searchRequest.getSortDirection());
 
     // 정렬 조건에 따른 메서드 분기
     if ("ipAddress".equals(searchRequest.getSortField())) {
-      logSlice = changeLogRepository.findByCursorIpDesc(
-          ipAfter, idAfter, searchRequest.getEmployeeNumber(), searchRequest.getMemo(),
-          searchRequest.getIpAddress(), searchRequest.getType(),
-          searchRequest.getAtFrom(), searchRequest.getAtTo(), pageRequest
-      );
-    } else {
-      logSlice = changeLogRepository.findByCursorAtDesc(
-          atAfter, idAfter, searchRequest.getEmployeeNumber(), searchRequest.getMemo(),
-          searchRequest.getIpAddress(), searchRequest.getType(),
-          searchRequest.getAtFrom(), searchRequest.getAtTo(), pageRequest
-      );
+      if (isAsc) {
+        logSlice = changeLogRepository.findByCursorIpAsc(
+            ipAfter, idAfter, safeEmpNum, safeMemo, safeIp,
+            searchRequest.getType(), searchRequest.getAtFrom(), searchRequest.getAtTo(), pageRequest
+        );
+      } else {
+        logSlice = changeLogRepository.findByCursorIpDesc(
+            ipAfter, idAfter, safeEmpNum, safeMemo, safeIp,
+            searchRequest.getType(), searchRequest.getAtFrom(), searchRequest.getAtTo(), pageRequest
+        );
+      }
+    } else { // 기본값 at 정렬
+      if (isAsc) {
+        logSlice = changeLogRepository.findByCursorAtAsc(
+            atAfter, idAfter, safeEmpNum, safeMemo, safeIp,
+            searchRequest.getType(), searchRequest.getAtFrom(), searchRequest.getAtTo(), pageRequest
+        );
+      } else {
+        logSlice = changeLogRepository.findByCursorAtDesc(
+            atAfter, idAfter, safeEmpNum, safeMemo, safeIp,
+            searchRequest.getType(), searchRequest.getAtFrom(), searchRequest.getAtTo(), pageRequest
+        );
+      }
     }
 
     // NPE 방어
