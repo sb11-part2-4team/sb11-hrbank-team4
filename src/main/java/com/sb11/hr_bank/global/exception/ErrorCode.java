@@ -37,6 +37,8 @@ public enum ErrorCode {
   // changeLogs
   //EXAMPLE_DEPARTMENT_ERROR(500, "C001", "예시 메시지"),
   CHANGELOG_NOT_FOUND(404, "C001", "해당 이력을 찾을 수 없습니다."),
+  CHANGELOG_INVALID_CURSOR(400, "C002", "잘못된 커서 값입니다."),
+  CHANGELOG_INVALID_PROPERTY_NAME(400, "C003", "알 수 없는 수정항목입니다."),
 
   // file
   FILE_EMPTY(400, "F001", "업로드 된 파일이 없습니다."),
@@ -47,7 +49,10 @@ public enum ErrorCode {
   BACKUP_NOT_FOUND(404, "B001", "백업을 찾을 수 없습니다."),
   BACKUP_NOT_IN_PROGRESS(409, "B002", "백업이 진행 중이어야만 처리할 수 있습니다."),
   BACKUP_REQUIRED_FILE(500, "B003", "백업 파일이 생성되지 않았습니다."),
-
+  BACKUP_INVALID_STATUS(400, "B004", "유효하지 않은 백업 상태입니다."),
+  BACKUP_CURSOR_ENCODE_FAILED(500, "B005", "커서 인코딩에 실패했습니다."),
+  BACKUP_CURSOR_DECODE_FAILED(400, "B006", "커서 디코딩에 실패했습니다."),
+  BACKUP_INVALID_SORT_FIELD(400, "B007", "유효하지 않은 정렬 기준입니다."),
 
   DUMMY_ERROR(500, "G002", "DUMMY");
 

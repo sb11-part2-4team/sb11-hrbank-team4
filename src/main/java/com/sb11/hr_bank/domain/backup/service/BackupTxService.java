@@ -27,23 +27,26 @@ public class BackupTxService {
 
   // 백업 데이터 생성 성공 시
   @Transactional(propagation = Propagation.REQUIRES_NEW)
-  public void complete(Long backupId, FileEntity csvFile) {
+  public Backup complete(Long backupId, FileEntity csvFile) {
     Backup backup = backupRepository.findById(backupId).orElseThrow(
         () -> new BusinessException(ErrorCode.BACKUP_NOT_FOUND)
     );
 
     backup.complete(csvFile);
+
+    return backup;
   }
 
   // 백업 실패 시
   @Transactional(propagation = Propagation.REQUIRES_NEW)
-  public void fail(Long backupId, FileEntity logFile) {
+  public Backup fail(Long backupId, FileEntity logFile) {
     Backup backup = backupRepository.findById(backupId).orElseThrow(
         () -> new BusinessException(ErrorCode.BACKUP_NOT_FOUND)
     );
 
     backup.fail(logFile);
 
+    return backup;
   }
 
 }

@@ -1,9 +1,13 @@
 package com.sb11.hr_bank.domain.backup.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sb11.hr_bank.domain.backup.dto.BackupCursor;
 import com.sb11.hr_bank.domain.backup.dto.BackupResponse;
 import com.sb11.hr_bank.domain.backup.dto.BackupSearchCondition;
 import com.sb11.hr_bank.domain.backup.entity.Backup;
 import com.sb11.hr_bank.domain.backup.entity.BackupStatus;
+import com.sb11.hr_bank.domain.backup.query.BackupSortDirection;
+import com.sb11.hr_bank.domain.backup.query.BackupSortField;
 import com.sb11.hr_bank.domain.backup.repository.BackupRepository;
 import com.sb11.hr_bank.domain.changelogs.repository.ChangeLogRepository;
 import com.sb11.hr_bank.domain.employee.entity.Employee;
@@ -15,15 +19,16 @@ import com.sb11.hr_bank.global.exception.BusinessException;
 import com.sb11.hr_bank.global.exception.ErrorCode;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,9 +43,11 @@ public class BasicBackupService implements BackupService {
   private final FileService fileService;
   private final BackupTxService backupTxService;
 
+  private final ObjectMapper objectMapper;
+
 
   @Override
-  public void startBackup(String worker) {
+  public BackupResponse startBackup(String worker) {
     // 가장 최근 백업 시간을 가져옴, 백업이 없을 경우 Optional.empty
     Optional<Instant> lastBackupTime =
         backupRepository.findTopByStatusOrderByEndedAtDesc(BackupStatus.COMPLETED)
@@ -56,7 +63,7 @@ public class BasicBackupService implements BackupService {
     if (!needBackup) {
       Backup skipped = Backup.skip(worker);
       backupRepository.save(skipped);
-      return;
+      return BackupResponse.from(skipped);
     }
 
     // 백업 시작(IN_PROGRESS 상태, 트랜잭션)
@@ -101,10 +108,17 @@ public class BasicBackupService implements BackupService {
       // CSV 파일로 사원 백업 데이터를 CSV 파일로 변환
       byte[] csvData = sb.toString().getBytes(StandardCharsets.UTF_8);
 
-      csvFile = fileService.saveInternalData("backup_data.csv", "text/csv", csvData);
+      // 파일 이름 설정 employee_backup_{backupId}_{서울 기준 현재 시간}.csv
+      String csvTimestamp = LocalDateTime.now(ZoneId.of("Asia/Seoul"))
+          .format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_SSS"));
+      String csvFileName = "employee_backup_" + backupId + "_" + csvTimestamp + ".csv";
+
+      csvFile = fileService.saveInternalData(csvFileName, "text/csv", csvData);
 
       // 백업 완료(COMPLETED 상태)
-      backupTxService.complete(backupId, csvFile);
+      Backup completed = backupTxService.complete(backupId, csvFile);
+
+      return BackupResponse.from(completed);
 
     } catch (Exception e) {
       // 백업 실패(FAILED) 상태
@@ -112,90 +126,89 @@ public class BasicBackupService implements BackupService {
       String log = "Error : " + e.getMessage();
       byte[] logData = log.getBytes(StandardCharsets.UTF_8);
 
+      // 파일 이름 설정 backup_error_{backupId}_{서울 기준 현재 시간}.log
+      String logTimestamp = LocalDateTime.now(ZoneId.of("Asia/Seoul"))
+          .format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_SSS"));
+      String logFileName = "backup_error_" + backupId + "_" + logTimestamp + ".log";
+
       // log 파일로 에러 로그 생성
-      FileEntity logFile = fileService.saveInternalData("backup_error.log", "text/plain", logData);
+      FileEntity logFile = fileService.saveInternalData(logFileName, "text/plain", logData);
 
       // 백업 실패(FAILED 상태)
-      backupTxService.fail(backupId, logFile);
+      Backup failed = backupTxService.fail(backupId, logFile);
 
       // 백업 최종 실패 시 CSV파일이 남아있을 경우 삭제
       if (csvFile != null) {
         fileService.cleanupDummyFile(csvFile.getId());
       }
-
+      return BackupResponse.from(failed);
     }
   }
 
   // 백업 목록 조회
-  // 100~1까지 100개 있다고 가정했을 때
-  // 앞에서부터 10개 단위로 조회(DB에는 order by desc), 임시 content 개수는 11개(100~90)
-  // hasNext를 통해 개수를 10개로 줄임(100~91)
-  // last는 10개 중 마지막 번호인 91이 나옴
-  // 추후 91보다 작은 id를 order by desc로 조회 -> 90번부터 조회
-  // 임시 content 개수는 11개 ... 반복
   @Override
   @Transactional(readOnly = true)
   public PageResponse<BackupResponse> findAll(BackupSearchCondition condition) {
 
-    // 페이지 size의 기본값(default)은 10
-    int size = (condition.size() == null) ? 10 : condition.size();
+    // 클라이언트에서 전달된 Base64 cursor 정보를 decode시켜 BackupCursor 객체로 변환
+    BackupCursor cursor = null;
 
-    // size가 음수거나 0일 경우
-    if (size <= 0) {
-      size = 10;
+    if (condition.cursor() != null) {
+      cursor = decodeCursor(condition.cursor());
     }
 
-    String sortField = condition.sortField() == null ? "startedAt" : condition.sortField();
+    // 페이지 크기 설정(음수, 0일 경우나 null일 경우 10으로 지정 / 기본값을 10으로 지정함)
+    int size = (condition.size() == null || condition.size() <= 0)
+        ? 10 : condition.size();
 
-    // 정렬 방향과 정렬 기준을 설정(메서드 분리)
-//    Sort sort = buildSort(sortField, condition.sortDirection());
-
-    // pageable의 개수는 10+1 11개(QueryDSL 사용 시 동적으로 수정)
-    Pageable pageable = PageRequest.of(0, size + 1,
-//        sort);
-        Sort.by(Sort.Direction.DESC, "startedAt")
-            .and(Sort.by(Sort.Direction.DESC, "id")));
-
-    // DB 조회 pageable 개수만큼(11개) 조회(startedAt, endedAt, status 별로 분리)
-    Slice<Backup> slice = backupRepository.search(
+    // 설정된 size를 condition으로 넘기고 DB에서 size를 조회하도록 설정
+    BackupSearchCondition initializeCondition = new BackupSearchCondition(
         condition.worker(),
+        condition.startedAtFrom(),
+        condition.startedAtTo(),
         condition.status(),
-        condition.startFrom(),
-        condition.startTo(),
-        condition.cursorStartedAt(),
-        condition.cursorId(),
-        pageable
+        condition.idAfter(),
+        condition.cursor(),
+        size,
+        Optional.ofNullable(condition.sortField()).orElse(BackupSortField.STARTED_AT),
+        Optional.ofNullable(condition.sortDirection()).orElse(BackupSortDirection.DESC)
     );
 
-    // pageable 수만큼, 10+1개 11개를 가져옴
+    // DB의 QueryDSL 쿼리 조회
+    Slice<Backup> slice = backupRepository.search(initializeCondition, cursor);
+
+    // size만큼 조회 된 데이터 목록
     List<Backup> content = slice.getContent();
 
     // 조회 결과 개수 > size이면 true
     boolean hasNext = slice.hasNext();
 
-    // 0~9번까지 10개
-    if (hasNext) {
-      content = content.subList(0, size);
-    }
-
     // content가 비면 null(마지막 원소 도달), 그렇지 않으면 마지막 데이터를 가져옴
     Backup last = content.isEmpty() ? null : content.get(content.size() - 1);
 
     String nextCursor = null;
+    Long nextIdAfter = null;
 
+    // 다음 페이지 요청을 위한 cursor 생성 및 Base64로 인코딩
     if (last != null) {
-      nextCursor = last.getStartedAt().toString() + "|" + last.getId();
+      nextCursor = encodeCursor(new BackupCursor(
+          last.getStartedAt(),
+          last.getEndedAt(),
+          last.getStatus(),
+          last.getId()
+      ));
+      nextIdAfter = last.getId();
     }
 
     // DTO 변환
     List<BackupResponse> mapped = content.stream().map(BackupResponse::from).toList();
 
     // Slice 형태로 응답 생성
-    Slice<BackupResponse> responseSlice = new SliceImpl<>(mapped, pageable, hasNext);
+    Slice<BackupResponse> responseSlice = new SliceImpl<>(mapped,
+        PageRequest.of(0, size), hasNext);
 
-    //
-    return PageResponse.fromSlice(responseSlice, nextCursor,
-        last != null ? last.getId() : null);
+    // 백업 데이터를 커서 기반 Slice 페이지네이션 방식으로 응답 반환
+    return PageResponse.fromSlice(responseSlice, nextCursor, nextIdAfter);
   }
 
   // 가장 최근의 백업을 조회(상태별 조회)
@@ -225,26 +238,33 @@ public class BasicBackupService implements BackupService {
 
     return value;
   }
-//
-//  // sortField와 sortDirection 처리 메서드
-//  private Sort buildSort(String sortField, String sortDirection) {
-//
-//    // 정렬 방향을 결정(기본값은 DESC)
-//    // equalsIgnoreCase는 대소문자를 구분하지 않도록 처리하는 메서드("AsC", "asC" 등 동일하게)
-//    Direction direction =
-//        "ASC".equalsIgnoreCase(sortDirection) ? Direction.ASC : Direction.DESC;
-//
-//    // 정렬 기준을 설정(기본값은 startedAt)
-//    // 정렬 기준은 startedAt(시작시간) endedAt(종료시간) status(작업상태)
-//    // endedAt, status가 아닌 다른 값이 들어오면 startedAt로 설정
-//    String field = switch (sortField == null ? "startedAt" : sortField) {
-//      case "endedAt" -> "endedAt";
-//      case "status" -> "status";
-//      default -> "startedAt";
-//    };
-//
-//    // 선택한 기준과 방향으로 정렬(Sort.by(정렬 방향, 정렬 속성)
-//    // 만약 정렬값(시작시간, 종료시간, 상태)이 완전히 같은게 있다면 id가 큰 순서로 정렬(id는 같을 수 없기 때문)
-//    return Sort.by(direction, field).and(Sort.by(direction, "id"));
-//  }
+
+  // Base64로 인코딩
+  private String encodeCursor(BackupCursor cursor) {
+    if (cursor == null) {
+      return null;
+    }
+
+    try {
+      String json = objectMapper.writeValueAsString(cursor);
+      return Base64.getEncoder().encodeToString(json.getBytes(StandardCharsets.UTF_8));
+    } catch (Exception e) {
+      throw new BusinessException(ErrorCode.BACKUP_CURSOR_ENCODE_FAILED);
+    }
+  }
+
+  // Base64로 된 문자열을 해독시켜주는 메서드
+  private BackupCursor decodeCursor(String cursor) {
+    if (cursor == null) {
+      return null;
+    }
+
+    try {
+      String json = new String(Base64.getDecoder().decode(cursor), StandardCharsets.UTF_8);
+
+      return objectMapper.readValue(json, BackupCursor.class);
+    } catch (Exception e) {
+      throw new BusinessException(ErrorCode.BACKUP_CURSOR_DECODE_FAILED);
+    }
+  }
 }

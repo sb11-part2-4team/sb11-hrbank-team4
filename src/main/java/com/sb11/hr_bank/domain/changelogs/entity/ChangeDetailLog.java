@@ -22,8 +22,9 @@ public class ChangeDetailLog extends BaseEntity{
   private ChangeLog changeLog;
 
   // 어떤 항목이 변경되었는지
+  @Enumerated(EnumType.STRING)
   @Column(name = "property_name", nullable = false, length = 30)
-  private String propertyName;
+  private ChangeProperty propertyName;
 
   // 변경 전 데이터
   @Column(name = "before", columnDefinition = "TEXT")
@@ -34,7 +35,7 @@ public class ChangeDetailLog extends BaseEntity{
   private String after;
 
   @Builder
-  public ChangeDetailLog(String propertyName, String before, String after) {
+  public ChangeDetailLog(ChangeProperty propertyName, String before, String after) {
     this.propertyName = propertyName;
     this.before = before;
     this.after = after;
