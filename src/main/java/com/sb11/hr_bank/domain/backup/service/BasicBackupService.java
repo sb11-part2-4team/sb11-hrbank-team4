@@ -30,6 +30,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -47,7 +48,16 @@ public class BasicBackupService implements BackupService {
 
 
   @Override
+  @Transactional(isolation = Isolation.REPEATABLE_READ)
   public BackupResponse startBackup(String worker) {
+
+    // 백업이 진행중일 경우 백업 생성시 예외 처리
+    Optional<Backup> isInProgress = backupRepository.findByStatus(BackupStatus.IN_PROGRESS);
+
+    if (isInProgress.isPresent()) {
+      throw new BusinessException(ErrorCode.BACKUP_ALREADY_IN_PROGRESS);
+    }
+
     // 가장 최근 백업 시간을 가져옴, 백업이 없을 경우 Optional.empty
     Optional<Instant> lastBackupTime =
         backupRepository.findTopByStatusOrderByEndedAtDesc(BackupStatus.COMPLETED)
