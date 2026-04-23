@@ -26,9 +26,8 @@ public interface EmployeeApi {
     @Operation(summary = "직원 등록", description = "새로운 직원을 등록합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "등록 성공"),
-            @ApiResponse(responseCode = "400", description = "잘못된 요청"),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청 또는 중복된 이메일"),
             @ApiResponse(responseCode = "404", description = "부서를 찾을 수 없음"),
-            @ApiResponse(responseCode = "409", description = "중복된 이메일"),
             @ApiResponse(responseCode = "500", description = "서버 오류")
     })
     ResponseEntity<EmployeeDto> create(
@@ -89,9 +88,8 @@ public interface EmployeeApi {
     @Operation(summary = "직원 수정", description = "직원 정보를 수정합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "수정 성공"),
-            @ApiResponse(responseCode = "400", description = "잘못된 요청"),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청 또는 중복된 이메일"),
             @ApiResponse(responseCode = "404", description = "직원 또는 부서를 찾을 수 없음"),
-            @ApiResponse(responseCode = "409", description = "중복된 이메일"),
             @ApiResponse(responseCode = "500", description = "서버 오류")
     })
     ResponseEntity<EmployeeDto> update(
