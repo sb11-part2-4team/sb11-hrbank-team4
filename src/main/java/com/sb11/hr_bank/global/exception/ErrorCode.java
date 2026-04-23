@@ -31,8 +31,8 @@ public enum ErrorCode {
   // department
   //EXAMPLE_DEPARTMENT_ERROR(500, "D001", "예시 메시지"),
   DEPARTMENT_NOT_FOUND(404, "D001", "해당 부서를 찾을 수 없습니다."),
-  DEPARTMENT_DUPLICATE_NAME(409, "D002", "이미 존재하는 부서명입니다."),
-  DEPARTMENT_HAS_EMPLOYEES(409, "D003", "해당 부서에 소속된 직원이 있어 삭제할 수 없습니다."),
+  DEPARTMENT_DUPLICATE_NAME(400, "D002", "이미 존재하는 부서명입니다."),
+  DEPARTMENT_HAS_EMPLOYEES(400, "D003", "해당 부서에 소속된 직원이 있어 삭제할 수 없습니다."),
 
   // changeLogs
   //EXAMPLE_DEPARTMENT_ERROR(500, "C001", "예시 메시지"),
