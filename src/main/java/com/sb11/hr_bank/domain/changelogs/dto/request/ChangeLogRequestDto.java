@@ -58,7 +58,7 @@ public class ChangeLogRequestDto {
     private Integer size = 10;
     @Schema(description = "정렬 기준 필드 (at: 시간순, ipAddress: IP순)", example = "at", defaultValue = "at")
     private String sortField = "at";
-    @Schema(description = "정렬 방향 (DESC: 최신순, ASC: 과거순", example = "DESC", defaultValue = "DESC")
+    @Schema(description = "정렬 방향 (DESC: 최신순, ASC: 과거순)", example = "DESC", defaultValue = "DESC")
     private String sortDirection = "DESC";
 
   }
