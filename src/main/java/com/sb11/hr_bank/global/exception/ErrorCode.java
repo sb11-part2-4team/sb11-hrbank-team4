@@ -18,7 +18,7 @@ public enum ErrorCode {
 
   // employee
   EMPLOYEE_NOT_FOUND(404, "E001", "직원을 찾을 수 없습니다."),
-  EMPLOYEE_DUPLICATE_EMAIL(409, "E002", "이미 사용 중인 이메일입니다."),
+  EMPLOYEE_DUPLICATE_EMAIL(400, "E002", "이미 사용 중인 이메일입니다."),
   EMPLOYEE_DEPARTMENT_NOT_FOUND(404, "E003", "부서를 찾을 수 없습니다."),
   EMPLOYEE_INVALID_GROUP_BY(400, "E004", "groupBy는 department 또는 position만 가능합니다."),
   EMPLOYEE_INVALID_TREND_UNIT(400, "E005", "unit은 day, week, month, quarter, year만 가능합니다."),

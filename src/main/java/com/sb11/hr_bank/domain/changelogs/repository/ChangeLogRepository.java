@@ -77,7 +77,6 @@ public interface ChangeLogRepository extends JpaRepository<ChangeLog, Long> {
   // IP DESC
   @Query("""
         SELECT c FROM ChangeLog c
-        JOIN FETCH c.employee e
         WHERE (
             (CAST(:ipAfter AS string) IS NULL OR c.ipAddress < :ipAfter)
             OR (c.ipAddress = :ipAfter AND c.id < :idAfter)

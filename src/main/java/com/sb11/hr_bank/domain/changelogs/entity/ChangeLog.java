@@ -18,10 +18,9 @@ public class ChangeLog extends BaseEntity {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  // Employee Entity 연결
-  @ManyToOne(fetch = FetchType.LAZY, optional = true)
-  @JoinColumn(name = "employee_id", nullable = true)
-  private Employee employee;
+  // 삭제 시 Employee 엔티티 참조 충돌을 피하기 위해 ID만 보관
+  @Column(name = "employee_id")
+  private Long employeeId;
 
   @Enumerated(EnumType.STRING)
   @Column(name = "type", nullable = false, length = 20)
@@ -37,8 +36,8 @@ public class ChangeLog extends BaseEntity {
   private List<ChangeDetailLog> details = new ArrayList<>();
 
   @Builder
-  public ChangeLog(Employee employee, ChangeLogType type, String memo, String ipAddress) {
-    this.employee = employee;
+  public ChangeLog(Long employeeId, ChangeLogType type, String memo, String ipAddress) {
+    this.employeeId = employeeId;
     this.type = type;
     this.memo = memo;
     this.ipAddress = ipAddress;

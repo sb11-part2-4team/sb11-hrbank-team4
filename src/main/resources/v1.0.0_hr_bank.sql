@@ -51,9 +51,7 @@ CREATE TABLE IF NOT EXISTS change_logs
     memo        text,
     ip_address  VARCHAR(20) NOT NULL DEFAULT '127.0.0.1',
 
-    CHECK (type IN ('CREATED', 'UPDATED', 'DELETED') ),
-
-    FOREIGN KEY (employee_id) REFERENCES employees (id) ON DELETE SET NULL
+    CHECK (type IN ('CREATED', 'UPDATED', 'DELETED') )
 
 
     );
