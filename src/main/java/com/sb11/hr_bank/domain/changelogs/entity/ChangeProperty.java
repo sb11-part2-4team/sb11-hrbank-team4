@@ -10,7 +10,7 @@ public enum ChangeProperty {
   EMAIL("이메일"),
   DEPARTMENT("부서"),
   POSITION("직함"),
-  HIRE_DATE("고용일"),
+  HIRE_DATE("입사일"),
   STATUS("상태"),
   PROFILE("프로필");
 
