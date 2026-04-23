@@ -52,9 +52,9 @@ public class BasicBackupService implements BackupService {
   public BackupResponse startBackup(String worker) {
 
     // 백업이 진행중일 경우 백업 생성시 예외 처리
-    boolean isInProgress = backupRepository.existsByStatus(BackupStatus.IN_PROGRESS);
+    Optional<Backup> isInProgress = backupRepository.findByStatus(BackupStatus.IN_PROGRESS);
 
-    if (isInProgress) {
+    if (isInProgress.isPresent()) {
       throw new BusinessException(ErrorCode.BACKUP_ALREADY_IN_PROGRESS);
     }
 
