@@ -23,12 +23,12 @@ public interface ChangeLogRepository extends JpaRepository<ChangeLog, Long> {
   @Query("""
         SELECT c FROM ChangeLog c JOIN FETCH c.employee e
         WHERE (
-            (:atAfter IS NULL OR c.createdAt < :atAfter)
+            (CAST(:atAfter AS timestamp) IS NULL OR c.createdAt < :atAfter)
             OR (c.createdAt = :atAfter AND c.id < :idAfter)
         )
-        AND (:empNum IS NULL OR e.employeeNumber LIKE CONCAT('%', :empNum, '%'))
-        AND (:memo IS NULL OR c.memo LIKE CONCAT('%', :memo, '%'))
-        AND (:ipAddress IS NULL OR c.ipAddress LIKE CONCAT('%', :ipAddress, '%'))
+        AND (CAST(:empNum AS string) IS NULL OR e.employeeNumber LIKE CONCAT('%', :empNum, '%'))
+        AND (CAST(:memo AS string) IS NULL OR c.memo LIKE CONCAT('%', :memo, '%'))
+        AND (CAST(:ipAddress AS string) IS NULL OR c.ipAddress LIKE CONCAT('%', :ipAddress, '%'))
         AND (:type IS NULL OR c.type = :type)
         AND (CAST(:atFrom AS timestamp) IS NULL OR c.createdAt >= :atFrom)
         AND (CAST(:atTo AS timestamp) IS NULL OR c.createdAt <= :atTo)
@@ -50,12 +50,12 @@ public interface ChangeLogRepository extends JpaRepository<ChangeLog, Long> {
   @Query("""
           SELECT c FROM ChangeLog c JOIN FETCH c.employee e
           WHERE (
-              (:atAfter IS NULL OR c.createdAt > :atAfter)
+              (CAST(:atAfter AS timestamp) IS NULL OR c.createdAt > :atAfter)
               OR (c.createdAt = :atAfter AND c.id > :idAfter)
           )
-          AND (:empNum IS NULL OR e.employeeNumber LIKE CONCAT('%', :empNum, '%'))
-          AND (:memo IS NULL OR c.memo LIKE CONCAT('%', :memo, '%'))
-          AND (:ipAddress IS NULL OR c.ipAddress LIKE CONCAT('%', :ipAddress, '%'))
+          AND (CAST(:empNum AS string) IS NULL OR e.employeeNumber LIKE CONCAT('%', :empNum, '%'))
+          AND (CAST(:memo AS string) IS NULL OR c.memo LIKE CONCAT('%', :memo, '%'))
+          AND (CAST(:ipAddress AS string) IS NULL OR c.ipAddress LIKE CONCAT('%', :ipAddress, '%'))
           AND (:type IS NULL OR c.type = :type)
           AND (CAST(:atFrom AS timestamp) IS NULL OR c.createdAt >= :atFrom)
           AND (CAST(:atTo AS timestamp) IS NULL OR c.createdAt <= :atTo)
@@ -79,12 +79,12 @@ public interface ChangeLogRepository extends JpaRepository<ChangeLog, Long> {
         SELECT c FROM ChangeLog c
         JOIN FETCH c.employee e
         WHERE (
-            (:ipAfter IS NULL OR c.ipAddress < :ipAfter)
+            (CAST(:ipAfter AS string) IS NULL OR c.ipAddress < :ipAfter)
             OR (c.ipAddress = :ipAfter AND c.id < :idAfter)
         )
-        AND (:empNum IS NULL OR e.employeeNumber LIKE CONCAT('%', :empNum, '%'))
-        AND (:memo IS NULL OR c.memo LIKE CONCAT('%', :memo, '%'))
-        AND (:ipAddress IS NULL OR c.ipAddress LIKE CONCAT('%', :ipAddress, '%'))
+        AND (CAST(:empNum AS string) IS NULL OR e.employeeNumber LIKE CONCAT('%', :empNum, '%'))
+        AND (CAST(:memo AS string) IS NULL OR c.memo LIKE CONCAT('%', :memo, '%'))
+        AND (CAST(:ipAddress AS string) IS NULL OR c.ipAddress LIKE CONCAT('%', :ipAddress, '%'))
         AND (:type IS NULL OR c.type = :type)
         AND (CAST(:atFrom AS timestamp) IS NULL OR c.createdAt >= :atFrom)
         AND (CAST(:atTo AS timestamp) IS NULL OR c.createdAt <= :atTo)
@@ -106,12 +106,12 @@ public interface ChangeLogRepository extends JpaRepository<ChangeLog, Long> {
   @Query("""
           SELECT c FROM ChangeLog c JOIN FETCH c.employee e
           WHERE (
-              (:ipAfter IS NULL OR c.ipAddress > :ipAfter)
+              (CAST(:ipAfter AS string) IS NULL OR c.ipAddress > :ipAfter)
               OR (c.ipAddress = :ipAfter AND c.id > :idAfter)
           )
-          AND (:empNum IS NULL OR e.employeeNumber LIKE CONCAT('%', :empNum, '%'))
-          AND (:memo IS NULL OR c.memo LIKE CONCAT('%', :memo, '%'))
-          AND (:ipAddress IS NULL OR c.ipAddress LIKE CONCAT('%', :ipAddress, '%'))
+          AND (CAST(:empNum AS string) IS NULL OR e.employeeNumber LIKE CONCAT('%', :empNum, '%'))
+          AND (CAST(:memo AS string) IS NULL OR c.memo LIKE CONCAT('%', :memo, '%'))
+          AND (CAST(:ipAddress AS string) IS NULL OR c.ipAddress LIKE CONCAT('%', :ipAddress, '%'))
           AND (:type IS NULL OR c.type = :type)
           AND (CAST(:atFrom AS timestamp) IS NULL OR c.createdAt >= :atFrom)
           AND (CAST(:atTo AS timestamp) IS NULL OR c.createdAt <= :atTo)
