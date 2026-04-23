@@ -21,12 +21,18 @@ public interface ChangeLogRepository extends JpaRepository<ChangeLog, Long> {
   // 3. [시간(at) 정렬용] 복합 커서 페이징
   @Query("""
         SELECT c FROM ChangeLog c
-        JOIN FETCH c.employee e
         WHERE (
             (:atAfter IS NULL OR c.createdAt < :atAfter) 
             OR (c.createdAt = :atAfter AND c.id < :idAfter)
         )
-        AND (:empNum IS NULL OR e.employeeNumber = :empNum)
+        AND (
+                :empNum IS NULL OR EXISTS (
+                        SELECT 1
+                        FROM Employee e
+                        WHERE e.id = c.employeeId
+                                AND e.employeeNumber = :empNum
+                )
+        )
         AND (:memo IS NULL OR c.memo LIKE CONCAT('%', :memo, '%'))
         AND (:searchIp IS NULL OR c.ipAddress = :searchIp)
         AND (:type IS NULL OR c.type = :type)
@@ -49,12 +55,18 @@ public interface ChangeLogRepository extends JpaRepository<ChangeLog, Long> {
   // 4. [IP 정렬용] 복합 커서 페이징
   @Query("""
         SELECT c FROM ChangeLog c
-        JOIN FETCH c.employee e
         WHERE (
             (:ipAfter IS NULL OR c.ipAddress < :ipAfter) 
             OR (c.ipAddress = :ipAfter AND c.id < :idAfter)
         )
-        AND (:empNum IS NULL OR e.employeeNumber = :empNum)
+        AND (
+                :empNum IS NULL OR EXISTS (
+                        SELECT 1
+                        FROM Employee e
+                        WHERE e.id = c.employeeId
+                                AND e.employeeNumber = :empNum
+                )
+        )
         AND (:memo IS NULL OR c.memo LIKE CONCAT('%', :memo, '%'))
         AND (:searchIp IS NULL OR c.ipAddress = :searchIp)
         AND (:type IS NULL OR c.type = :type)
