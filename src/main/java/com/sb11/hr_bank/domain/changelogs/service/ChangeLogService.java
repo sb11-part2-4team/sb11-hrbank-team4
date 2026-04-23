@@ -5,6 +5,7 @@ import com.sb11.hr_bank.domain.changelogs.dto.response.ChangeLogResponseDto;
 import com.sb11.hr_bank.domain.changelogs.entity.ChangeDetailLog;
 import com.sb11.hr_bank.domain.changelogs.entity.ChangeLog;
 import com.sb11.hr_bank.domain.changelogs.repository.ChangeLogRepository;
+import com.sb11.hr_bank.domain.employee.entity.Employee;
 import com.sb11.hr_bank.domain.employee.repository.EmployeeRepository;
 import com.sb11.hr_bank.global.dto.PageResponse;
 import com.sb11.hr_bank.global.exception.ErrorCode;
@@ -92,8 +93,10 @@ public class ChangeLogService {
 
     // NPE 방어
     Slice<ChangeLogResponseDto.ListInfo> dtoSlice = logSlice.map(log -> {
-      String empNum = (log.getEmployee() != null)
-          ? log.getEmployee().getEmployeeNumber()
+      Employee employee = employeeRepository.findById(log.getEmployeeId())
+              .orElse(null);
+      String empNum = (employee != null)
+          ? employee.getEmployeeNumber()
           : "Unknown (Deleted)";
 
       return ChangeLogResponseDto.ListInfo.builder()
@@ -121,8 +124,10 @@ public class ChangeLogService {
         .orElseThrow(() -> new BusinessException(ErrorCode.CHANGELOG_NOT_FOUND));
 
     // 직원 정보 NPE 방어
-    String empNum = (log.getEmployee() != null) ? log.getEmployee().getEmployeeNumber() : "Unknown";
-    String empName = (log.getEmployee() != null) ? log.getEmployee().getName() : "탈퇴한 사용자";
+    Employee employee = employeeRepository.findById(log.getEmployeeId())
+            .orElse(null);
+    String empNum = (employee != null) ? employee.getEmployeeNumber() : "Unknown";
+    String empName = (employee != null) ? employee.getName() : "탈퇴한 사용자";
 
     return ChangeLogResponseDto.DetailInfo.builder()
         .id(log.getId())
@@ -159,14 +164,9 @@ public class ChangeLogService {
    */
   @Transactional
   public void createLog(ChangeLogRequestDto.Create createDto, String ipAddress) {
-    // 1. 직원 엔티티 조회
-    com.sb11.hr_bank.domain.employee.entity.Employee employee =
-        employeeRepository.findById(createDto.getEmployeeId())
-            .orElseThrow(() -> new BusinessException(ErrorCode.EMPLOYEE_NOT_FOUND));
-
-    // 2. 로그 메인 엔티티 생성
+    // 1. 로그 메인 엔티티 생성
     ChangeLog changeLog = ChangeLog.builder()
-        .employee(employee)
+        .employeeId(createDto.getEmployeeId())
         .type(createDto.getType())
         .memo(createDto.getMemo())
         .ipAddress(ipAddress)
