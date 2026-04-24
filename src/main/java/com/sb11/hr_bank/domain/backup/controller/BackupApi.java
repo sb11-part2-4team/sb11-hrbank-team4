@@ -71,8 +71,6 @@ public interface BackupApi {
           content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
       @ApiResponse(responseCode = "404", description = "백업을 찾을 수 없습니다.",
           content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-      @ApiResponse(responseCode = "409", description = "현재 상태에서는 요청을 처리할 수 없습니다.",
-          content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
       @ApiResponse(responseCode = "500", description = "서버 내부 오류",
           content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
   })

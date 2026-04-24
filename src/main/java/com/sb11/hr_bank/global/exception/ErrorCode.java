@@ -53,7 +53,7 @@ public enum ErrorCode {
   BACKUP_CURSOR_ENCODE_FAILED(500, "B005", "커서 인코딩에 실패했습니다."),
   BACKUP_CURSOR_DECODE_FAILED(400, "B006", "커서 디코딩에 실패했습니다."),
   BACKUP_INVALID_SORT_FIELD(400, "B007", "유효하지 않은 정렬 기준입니다."),
-  BACKUP_ALREADY_IN_PROGRESS(400, "B008", "이미 백업이 진행중입니다."),
+  BACKUP_ALREADY_IN_PROGRESS(409, "B008", "이미 백업이 진행중입니다."),
 
   DUMMY_ERROR(500, "G002", "DUMMY");
 

@@ -17,6 +17,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -92,9 +95,16 @@ public class ChangeLogService {
     }
 
     // NPE 방어
+    Map<Long, Employee> employeeMap = employeeRepository.findAllById(
+            logSlice.getContent().stream()
+                    .map(ChangeLog::getEmployeeId)
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .toList()
+    ).stream().collect(Collectors.toMap(Employee::getId, Function.identity()));
+
     Slice<ChangeLogResponseDto.ListInfo> dtoSlice = logSlice.map(log -> {
-      Employee employee = employeeRepository.findById(log.getEmployeeId())
-              .orElse(null);
+      Employee employee = employeeMap.get(log.getEmployeeId());
       String empNum = (employee != null)
           ? employee.getEmployeeNumber()
           : "Unknown (Deleted)";
@@ -124,8 +134,10 @@ public class ChangeLogService {
         .orElseThrow(() -> new BusinessException(ErrorCode.CHANGELOG_NOT_FOUND));
 
     // 직원 정보 NPE 방어
-    Employee employee = employeeRepository.findById(log.getEmployeeId())
-            .orElse(null);
+    Long employeeId = log.getEmployeeId();
+    Employee employee = employeeId != null
+            ? employeeRepository.findById(employeeId).orElse(null)
+            : null;
     String empNum = (employee != null) ? employee.getEmployeeNumber() : "Unknown";
     String empName = (employee != null) ? employee.getName() : "탈퇴한 사용자";
 
@@ -140,7 +152,8 @@ public class ChangeLogService {
         // 상세 변경 내역 변환
         .diffs(log.getDetails().stream()
             .map(detail -> ChangeLogResponseDto.DetailInfo.DiffItem.builder()
-                .propertyName(detail.getPropertyName().getDescription())
+                //.propertyName(detail.getPropertyName().getDescription())
+                .propertyName(detail.getPropertyName().name().toLowerCase().replace("hire_date", "hireDate"))
                 .before(detail.getBefore())
                 .after(detail.getAfter())
                 .build())
@@ -177,7 +190,9 @@ public class ChangeLogService {
       for (ChangeLogRequestDto.Create.Detail detailDto : createDto.getDetails()) {
         try {
           // String을 Enum(ChangeProperty)으로 변환하여 저장
-          String propertyStr = detailDto.getPropertyName().toUpperCase();
+          String propertyStr = detailDto.getPropertyName().toUpperCase()
+              .replace("HIREDATE", "HIRE_DATE");
+
           com.sb11.hr_bank.domain.changelogs.entity.ChangeProperty property =
               com.sb11.hr_bank.domain.changelogs.entity.ChangeProperty.valueOf(propertyStr);
 
