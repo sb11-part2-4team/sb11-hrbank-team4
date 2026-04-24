@@ -18,7 +18,7 @@ public class FileCleanupScheduler {
   private final FileRepository fileRepository;
   private final FileService fileService;
 
-  @Scheduled(cron = "0 0 3 * * *")
+  @Scheduled(cron = "0 0 3 * * *", zone = "Asia/Seoul")
   public void cleanupFailedFiles() {
     log.info("고아 파일 정리 스케줄러 시작");
 
