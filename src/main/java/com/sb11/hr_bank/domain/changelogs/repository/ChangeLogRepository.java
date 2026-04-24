@@ -132,7 +132,7 @@ public interface ChangeLogRepository extends JpaRepository<ChangeLog, Long> {
                           SELECT 1
                           FROM Employee e
                           WHERE e.id = c.employeeId
-                                  AND e.employeeNumber LIKE CONCAT('%', :empNum, '%')
+                                  AND e.employeeNumber LIKE CONCAT('%', CAST(:empNum AS string), '%')
                   )
           )
           AND (:memo IS NULL OR c.memo LIKE CONCAT('%', CAST(:memo AS string), '%'))
