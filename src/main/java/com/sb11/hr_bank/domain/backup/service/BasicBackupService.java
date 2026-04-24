@@ -70,7 +70,7 @@ public class BasicBackupService implements BackupService {
 
     // 백업이 필요하지 않을 경우(이미 백업 진행 후에 변경 이력이 없을 경우)
     // 백업 건너뜀(SKIPPED 상태)
-    if (!needBackup || !(employeeRepository.existsByIdIsNotNull())) {
+    if (!needBackup) {
       Backup skipped = Backup.skip(worker);
       backupRepository.save(skipped);
       return BackupResponse.from(skipped);
