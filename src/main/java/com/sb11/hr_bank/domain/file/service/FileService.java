@@ -135,7 +135,7 @@ public class FileService {
       log.info("로컬 파일 삭제 성공: {}", destPath);
     } catch (IOException e) {
       //DB 커밋이 끝났으므로 롤백 불가, 에러 로그 남김
-      log.error("로컬 파일 삭제 실패: {}", destPath, e);
+      throw new BusinessException(ErrorCode.FILE_STORAGE_ERROR);
     }
   }
 
@@ -150,7 +150,7 @@ public class FileService {
       Files.deleteIfExists(destPath);
       log.info("로컬 더미 파일 삭제 완료: {}", destPath);
     } catch (IOException e) {
-      log.error("로컬 더미 파일 삭제 실패: {}", destPath, e);
+      throw new BusinessException(ErrorCode.FILE_STORAGE_ERROR);
     }
   }
 }
