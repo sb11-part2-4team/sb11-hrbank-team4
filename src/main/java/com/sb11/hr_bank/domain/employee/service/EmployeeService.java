@@ -477,7 +477,7 @@ public class EmployeeService {
         }
 
         try {
-            fileService.cleanupDummyFile(file.getId());
+            fileService.deleteFile(file.getId());
         } catch (Exception e) {
             log.warn("업로드 파일 정리 실패. fileId={}", file.getId(), e);
         }
