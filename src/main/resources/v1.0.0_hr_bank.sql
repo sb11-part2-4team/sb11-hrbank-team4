@@ -18,6 +18,8 @@ CREATE TABLE IF NOT EXISTS file_entities
     content_type VARCHAR(30)                           NOT NULL,
     size         BIGINT                                NOT NULL,
     status       VARCHAR(20) DEFAULT 'PENDING' NOT NULL
+
+    CHECK ( status IN ('PENDING', 'ACTIVE', 'FAILED') )
     );
 
 CREATE TABLE IF NOT EXISTS employees
