@@ -16,8 +16,10 @@ CREATE TABLE IF NOT EXISTS file_entities
     created_at   TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     name         VARCHAR(200)                          NOT NULL,
     content_type VARCHAR(30)                           NOT NULL,
-    size         BIGINT                                NOT NULL
+    size         BIGINT                                NOT NULL,
+    status       VARCHAR(20) DEFAULT 'PENDING' NOT NULL,
 
+    CHECK ( status IN ('PENDING', 'ACTIVE', 'FAILED') )
     );
 
 CREATE TABLE IF NOT EXISTS employees
@@ -87,6 +89,8 @@ CREATE TABLE IF NOT EXISTS backups
     FOREIGN KEY (file_id) REFERENCES file_entities (id) ON DELETE SET NULL
 
     );
+
+
 
 
 
