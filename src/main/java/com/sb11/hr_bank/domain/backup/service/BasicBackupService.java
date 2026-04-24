@@ -149,7 +149,7 @@ public class BasicBackupService implements BackupService {
 
       // 백업 최종 실패 시 CSV파일이 남아있을 경우 삭제
       if (csvFile != null) {
-        fileService.cleanupDummyFile(csvFile.getId());
+        fileService.deleteFile(csvFile.getId());
       }
       return BackupResponse.from(failed);
     }
