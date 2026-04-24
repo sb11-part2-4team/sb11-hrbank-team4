@@ -138,4 +138,19 @@ public class FileService {
       log.error("로컬 파일 삭제 실패: {}", destPath, e);
     }
   }
+
+  @Transactional
+  public void deleteFailedFile(FileEntity fileEntity) {
+    Path destPath = getAbsolutePath(fileEntity.getId());
+
+    //DB 메타데이터 강제 삭제
+    fileRepository.delete(fileEntity);
+
+    try {
+      Files.deleteIfExists(destPath);
+      log.info("로컬 더미 파일 삭제 완료: {}", destPath);
+    } catch (IOException e) {
+      log.error("로컬 더미 파일 삭제 실패: {}", destPath, e);
+    }
+  }
 }
