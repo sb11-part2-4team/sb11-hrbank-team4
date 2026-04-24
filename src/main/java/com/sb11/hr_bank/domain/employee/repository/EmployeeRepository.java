@@ -31,6 +31,4 @@ public interface EmployeeRepository
 
   @Query("SELECT e FROM Employee e JOIN FETCH e.department")
   List<Employee> findAllWithDepartment();
-
-  boolean existsByIdIsNotNull();
 }
