@@ -1,4 +1,5 @@
 # HR Bank
+<img width="408" height="641" alt="image" src="https://github.com/user-attachments/assets/eef3ad84-ba69-465d-bd30-9923892c958d" />
 
 - 기업의 핵심 자산인 인적 자원 데이터를 안전하게 저장하고, 대량의 데이터를 주기적으로 백업 및 관리하는 서비스 입니다.
 - 프로젝트 기간 : 2026.04.15 ~ 2026.04.25
@@ -43,11 +44,12 @@
 
 ## 아키텍쳐
 
-![image.png](attachment:1f695281-9983-4ebf-9a8c-53c19ead2e63:image.png)
+<img width="1345" height="648" alt="image" src="https://github.com/user-attachments/assets/4fadb0ab-0b86-4653-8239-ed68948382cb" />
+
 
 ## ERD
 
-![image.png](attachment:124bbdb8-45fd-453e-ac7f-fb1979513b3c:image.png)
+<img width="1239" height="742" alt="image" src="https://github.com/user-attachments/assets/2a84f656-2f95-40c3-aab1-a4cf3faf5fe7" />
 
 ## 프로젝트 구조
 
@@ -68,8 +70,9 @@ src/main/java/com/sb11/hr_bank
 ```
 
 ## 자동 백업 시퀀스 다이어그램
+<img width="924" height="634" alt="image" src="https://github.com/user-attachments/assets/cbfd3fd1-2e4d-46fa-8570-9c6f6aa218a6" />
 
-![image.png](attachment:b7223fe6-408b-4268-b836-b68733a15c29:image.png)
+
 
 ## API 개요
 
