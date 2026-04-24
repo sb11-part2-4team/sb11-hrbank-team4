@@ -16,8 +16,10 @@ CREATE TABLE IF NOT EXISTS file_entities
     created_at   TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     name         VARCHAR(200)                          NOT NULL,
     content_type VARCHAR(30)                           NOT NULL,
-    size         BIGINT                                NOT NULL
+    size         BIGINT                                NOT NULL,
+    status       VARCHAR(20) DEFAULT 'PENDING' NOT NULL,
 
+    CHECK ( status IN ('PENDING', 'ACTIVE', 'FAILED') )
     );
 
 CREATE TABLE IF NOT EXISTS employees
@@ -27,7 +29,7 @@ CREATE TABLE IF NOT EXISTS employees
     updated_at       TIMESTAMPTZ,
     name             VARCHAR(20)                           NOT NULL,
     email            VARCHAR(100)                          NOT NULL UNIQUE,
-    employee_number  VARCHAR(100)                          NOT NULL,
+    employee_number  VARCHAR(100)                          NOT NULL UNIQUE,
     department_id    BIGINT                                NOT NULL,
     position         VARCHAR(100)                          NOT NULL,
     hire_date        DATE                                  NOT NULL,
@@ -46,14 +48,12 @@ CREATE TABLE IF NOT EXISTS change_logs
 
     id          BIGSERIAL PRIMARY KEY,
     created_at  TIMESTAMPTZ          DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    employee_id BIGINT      NOT NULL,
+    employee_id BIGINT,
     type        VARCHAR(20) NOT NULL,
     memo        text,
     ip_address  VARCHAR(20) NOT NULL DEFAULT '127.0.0.1',
 
-    CHECK (type IN ('직원 추가', '정보 수정', '직원 삭제') ),
-
-    FOREIGN KEY (employee_id) REFERENCES employees (id) ON DELETE NO ACTION
+    CHECK (type IN ('CREATED', 'UPDATED', 'DELETED') )
 
 
     );
@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS change_detail_logs
     before        TEXT,
     after         TEXT,
 
-    CHECK (property_name IN ('이름', '이메일', '부서', '직함', '고용일', '상태', '프로필')),
+    CHECK (property_name IN ('NAME', 'EMAIL', 'DEPARTMENT', 'POSITION', 'HIRE_DATE', 'STATUS', 'PROFILE')),
 
     FOREIGN KEY (change_log_id) REFERENCES change_logs (id) ON DELETE CASCADE
     );
@@ -84,11 +84,13 @@ CREATE TABLE IF NOT EXISTS backups
     status     VARCHAR(20)                           NOT NULL,
     file_id    BIGINT,
 
-    CHECK (status IN ('진행중', '완료', '실패', '건너뜀')),
+    CHECK (status IN ('IN_PROGRESS', 'COMPLETED', 'FAILED', 'SKIPPED')),
 
     FOREIGN KEY (file_id) REFERENCES file_entities (id) ON DELETE SET NULL
 
     );
+
+
 
 
 

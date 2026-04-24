@@ -1,7 +1,10 @@
 package com.sb11.hr_bank.domain.file.entity;
 
+import com.sb11.hr_bank.global.base.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -12,10 +15,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "files")
+@Table(name = "file_entities")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class FileEntity {
+public class FileEntity extends BaseEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,13 +33,22 @@ public class FileEntity {
   @Column(nullable = false)
   private Long size;
 
-  @Column(nullable = false, updatable = false)
-  private Instant createdAt;
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 20)
+  private FileStatus status;
 
   public FileEntity(String name, String contentType, Long size) {
     this.name = name;
     this.contentType = contentType;
     this.size = size;
-    this.createdAt = Instant.now();
+    this.status = FileStatus.PENDING;
+  }
+
+  public void activate() {
+    this.status = FileStatus.ACTIVE;
+  }
+
+  public void fail() {
+    this.status = FileStatus.FAILED;
   }
 }

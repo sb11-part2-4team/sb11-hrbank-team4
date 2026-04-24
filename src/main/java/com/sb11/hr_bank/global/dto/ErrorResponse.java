@@ -1,5 +1,6 @@
 package com.sb11.hr_bank.global.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 import lombok.Getter;
 import lombok.Setter;
@@ -8,9 +9,15 @@ import lombok.Setter;
 public class ErrorResponse {
 
   private final Instant timestamp;
+
+  @Schema(example = "400")
   private final int status;
+
+  @Schema(example = "잘못된 요청입니다.")
   private final String message;
+
   @Setter
+  @Schema(example = "부서 코드는 필수입니다.")
   private String details;
 
 
@@ -22,7 +29,7 @@ public class ErrorResponse {
   }
 
   //상태 코드에 따라 메시지는 고정. 세부 메시지는 ErrorCode에서.
-  private String resolveMessage(int status){
+  private String resolveMessage(int status) {
 
     return switch (status) {
       case (400) -> "잘못된 요청입니다.";
@@ -31,8 +38,6 @@ public class ErrorResponse {
       case (500) -> "요청 처리중 오류가 발생했습니다.";
       default -> "요청 처리중 오류가 발생했습니다. ";
     };
-
-
 
 
   }

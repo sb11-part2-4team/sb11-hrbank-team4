@@ -6,9 +6,9 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum ChangeLogType {
-  ADD("직원 추가"),
-  UPDATE("정보 수정"),
-  DELETE("직원 삭제");
+  CREATED("직원 추가"),
+  UPDATED("정보 수정"),
+  DELETED("직원 삭제");
 
   private final String description;
 }

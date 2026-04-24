@@ -1,6 +1,9 @@
 package com.sb11.hr_bank.domain.backup.entity;
 
 import com.sb11.hr_bank.domain.file.entity.FileEntity;
+import com.sb11.hr_bank.global.base.BaseEntity;
+import com.sb11.hr_bank.global.exception.BusinessException;
+import com.sb11.hr_bank.global.exception.ErrorCode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -15,13 +18,12 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Entity
 @Table(name = "backups")
 @Getter
 @NoArgsConstructor
-public class Backup { // extends BaseEntity {
+public class Backup extends BaseEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY) // auto_increment
@@ -46,29 +48,54 @@ public class Backup { // extends BaseEntity {
   @JoinColumn(name = "file_id", nullable = true)
   private FileEntity file;
 
-  public Backup(String worker) {
+  protected Backup(String worker, BackupStatus status) {
     this.worker = worker;
     this.startedAt = Instant.now();
-    this.status = BackupStatus.IN_PROGRESS;
+    this.status = status;
+
+    // 스킵 상태일 경우 바로 종료
+    if (status != BackupStatus.IN_PROGRESS) {
+      this.endedAt = Instant.now();
+    }
   }
 
-  public void complete(FileEntity file) {
-    this.file = file;
+  // 정적 팩토리 메서드
+  public static Backup skip(String worker) {
+    Backup backup = new Backup(worker, BackupStatus.SKIPPED);
+    return backup;
+  }
+
+  public static Backup create(String worker) {
+    return new Backup(worker, BackupStatus.IN_PROGRESS);
+  }
+
+  // IN_PROGRESS(진행중) 상태-> COMPLETED 상태로
+  public void complete(FileEntity csvFile) {
+    // IN_PROGRESS 상태가 아니면 예외
+    if (this.status != BackupStatus.IN_PROGRESS) {
+      throw new BusinessException(ErrorCode.BACKUP_NOT_IN_PROGRESS);
+    }
+    if (csvFile == null) {
+      throw new BusinessException(ErrorCode.BACKUP_REQUIRED_FILE);
+    }
+    this.file = csvFile;
     this.status = BackupStatus.COMPLETED;
     this.endedAt = Instant.now();
   }
 
-  public void fail() {
+  // IN_PROGRESS(진행중) 상태-> FAILED 상태로
+  public void fail(FileEntity logFile) {
+    if (this.status != BackupStatus.IN_PROGRESS) {
+      throw new BusinessException(ErrorCode.BACKUP_NOT_IN_PROGRESS);
+    }
+    // NPE 방지
+    if (logFile != null) {
+      this.file = logFile;
+    }
     this.status = BackupStatus.FAILED;
-    this.endedAt = Instant.now();
-  }
-
-  public void skip() {
-    this.status = BackupStatus.SKIPPED;
     this.endedAt = Instant.now();
   }
 }
 // 데이터 백업 관리
 // 데이터 백업한 ID, 작업자(IP주소), 백업을 시작한 시간, 백업이 완료된 시간, 상태, 파일 ID(fileId)
-// ID는 추후에 BaseEntity ?
 // 상태는 enum타입

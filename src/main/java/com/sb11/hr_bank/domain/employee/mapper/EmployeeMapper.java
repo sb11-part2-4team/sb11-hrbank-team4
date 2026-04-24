@@ -26,7 +26,7 @@ public class EmployeeMapper {
                 department.getName(),
                 employee.getPosition(),
                 employee.getHireDate(),
-                employee.getEmployeeStatus().getLabel(),
+                employee.getEmployeeStatus().name(),
                 profileId
         );
     }
