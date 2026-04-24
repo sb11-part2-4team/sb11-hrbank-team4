@@ -140,7 +140,8 @@ public class ChangeLogService {
         // 상세 변경 내역 변환
         .diffs(log.getDetails().stream()
             .map(detail -> ChangeLogResponseDto.DetailInfo.DiffItem.builder()
-                .propertyName(detail.getPropertyName().getDescription())
+                //.propertyName(detail.getPropertyName().getDescription())
+                .propertyName(detail.getPropertyName().name().toLowerCase().replace("hire_date", "hireDate"))
                 .before(detail.getBefore())
                 .after(detail.getAfter())
                 .build())
@@ -177,7 +178,9 @@ public class ChangeLogService {
       for (ChangeLogRequestDto.Create.Detail detailDto : createDto.getDetails()) {
         try {
           // String을 Enum(ChangeProperty)으로 변환하여 저장
-          String propertyStr = detailDto.getPropertyName().toUpperCase();
+          String propertyStr = detailDto.getPropertyName().toUpperCase()
+              .replace("HIREDATE", "HIRE_DATE");
+
           com.sb11.hr_bank.domain.changelogs.entity.ChangeProperty property =
               com.sb11.hr_bank.domain.changelogs.entity.ChangeProperty.valueOf(propertyStr);
 
