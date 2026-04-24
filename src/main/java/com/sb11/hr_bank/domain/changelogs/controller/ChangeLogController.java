@@ -13,7 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.time.Instant;
 
-@Tag(name = "Change Log API", description = "직원 정보 변경 이력 API")
+@Tag(name = "직원 정보 수정 이력 관리", description = "직원 정보 변경 이력 API")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/change-logs")
