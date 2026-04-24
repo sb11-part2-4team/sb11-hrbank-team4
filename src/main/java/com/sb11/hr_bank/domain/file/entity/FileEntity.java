@@ -33,9 +33,22 @@ public class FileEntity extends BaseEntity {
   @Column(nullable = false)
   private Long size;
 
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 20)
+  private FileStatus status;
+
   public FileEntity(String name, String contentType, Long size) {
     this.name = name;
     this.contentType = contentType;
     this.size = size;
+    this.status = FileStatus.PENDING;
+  }
+
+  public void activate() {
+    this.status = FileStatus.ACTIVE;
+  }
+
+  public void fail() {
+    this.status = FileStatus.FAILED;
   }
 }
