@@ -26,16 +26,14 @@ public interface ChangeLogRepository extends JpaRepository<ChangeLog, Long> {
             (CAST(:atAfter AS timestamp) IS NULL OR c.createdAt < :atAfter)
             OR (c.createdAt = :atAfter AND c.id < :idAfter)
         )
-        AND (
-                :empNum IS NULL OR EXISTS (
-                        SELECT 1
-                        FROM Employee e
-                        WHERE e.id = c.employeeId
-                                AND e.employeeNumber = :empNum
-                )
-        )
-        AND (:memo IS NULL OR c.memo LIKE CONCAT('%', :memo, '%'))
-        AND (:searchIp IS NULL OR c.ipAddress = :searchIp)
+        AND (:empNum IS NULL OR :empNum = '' OR EXISTS (
+                SELECT 1
+                FROM Employee e
+                WHERE e.id = c.employeeId
+                        AND e.employeeNumber LIKE CONCAT('%', CAST(:empNum AS string), '%')
+        ))
+        AND (:memo IS NULL OR c.memo LIKE CONCAT('%', CAST(:memo AS string), '%'))
+        AND (:ipAddress IS NULL OR c.ipAddress LIKE CONCAT('%', CAST(:ipAddress AS string), '%'))
         AND (:type IS NULL OR c.type = :type)
         AND (CAST(:atFrom AS timestamp) IS NULL OR c.createdAt >= :atFrom)
         AND (CAST(:atTo AS timestamp) IS NULL OR c.createdAt <= :atTo)
@@ -46,7 +44,7 @@ public interface ChangeLogRepository extends JpaRepository<ChangeLog, Long> {
       @Param("idAfter") Long idAfter,
       @Param("empNum") String empNum,
       @Param("memo") String memo,
-      @Param("searchIp") String searchIp,
+      @Param("ipAddress") String ipAddress,
       @Param("type") ChangeLogType type,
       @Param("atFrom") Instant atFrom,
       @Param("atTo") Instant atTo,
@@ -55,32 +53,32 @@ public interface ChangeLogRepository extends JpaRepository<ChangeLog, Long> {
 
   // 시간 ASC
   @Query("""
-          SELECT c FROM ChangeLog c
-          WHERE (
-              (CAST(:atAfter AS timestamp) IS NULL OR c.createdAt > :atAfter)
-              OR (c.createdAt = :atAfter AND c.id > :idAfter)
-          )
-          AND (
-                  :empNum IS NULL OR EXISTS (
-                          SELECT 1
-                          FROM Employee e
-                          WHERE e.id = c.employeeId
-                                  AND e.employeeNumber = :empNum
-                  )
-          )
-          AND (:memo IS NULL OR c.memo LIKE CONCAT('%', :memo, '%'))
-          AND (:searchIp IS NULL OR c.ipAddress = :searchIp)
-          AND (:type IS NULL OR c.type = :type)
-          AND (CAST(:atFrom AS timestamp) IS NULL OR c.createdAt >= :atFrom)
-          AND (CAST(:atTo AS timestamp) IS NULL OR c.createdAt <= :atTo)
-          ORDER BY c.createdAt ASC, c.id ASC
-          """)
+        SELECT c FROM ChangeLog c
+        WHERE (
+            (CAST(:atAfter AS timestamp) IS NULL OR c.createdAt > :atAfter)
+            OR (c.createdAt = :atAfter AND c.id > :idAfter)
+        )
+        AND (
+                :empNum IS NULL OR :empNum = '' OR EXISTS (
+                        SELECT 1
+                        FROM Employee e
+                        WHERE e.id = c.employeeId
+                                AND e.employeeNumber LIKE CONCAT('%', CAST(:empNum AS string), '%')
+                )
+        )
+        AND (:memo IS NULL OR c.memo LIKE CONCAT('%', CAST(:memo AS string), '%'))
+        AND (:ipAddress IS NULL OR c.ipAddress LIKE CONCAT('%', CAST(:ipAddress AS string), '%'))
+        AND (:type IS NULL OR c.type = :type)
+        AND (CAST(:atFrom AS timestamp) IS NULL OR c.createdAt >= :atFrom)
+        AND (CAST(:atTo AS timestamp) IS NULL OR c.createdAt <= :atTo)
+        ORDER BY c.createdAt ASC, c.id ASC
+      """)
   Slice<ChangeLog> findByCursorAtAsc(
       @Param("atAfter") Instant atAfter,
       @Param("idAfter") Long idAfter,
       @Param("empNum") String empNum,
       @Param("memo") String memo,
-      @Param("searchIp") String searchIp,
+      @Param("ipAddress") String ipAddress,
       @Param("type") ChangeLogType type,
       @Param("atFrom") Instant atFrom,
       @Param("atTo") Instant atTo,
@@ -96,15 +94,15 @@ public interface ChangeLogRepository extends JpaRepository<ChangeLog, Long> {
             OR (c.ipAddress = :ipAfter AND c.id < :idAfter)
         )
         AND (
-                :empNum IS NULL OR EXISTS (
+                :empNum IS NULL OR :empNum = '' OR EXISTS (
                         SELECT 1
                         FROM Employee e
                         WHERE e.id = c.employeeId
-                                AND e.employeeNumber = :empNum
+                                AND e.employeeNumber LIKE CONCAT('%', CAST(:empNum AS string), '%')
                 )
         )
-        AND (:memo IS NULL OR c.memo LIKE CONCAT('%', :memo, '%'))
-        AND (:searchIp IS NULL OR c.ipAddress = :searchIp)
+        AND (:memo IS NULL OR c.memo LIKE CONCAT('%', CAST(:memo AS string), '%'))
+        AND (:ipAddress IS NULL OR c.ipAddress LIKE CONCAT('%', CAST(:ipAddress AS string), '%'))
         AND (:type IS NULL OR c.type = :type)
         AND (CAST(:atFrom AS timestamp) IS NULL OR c.createdAt >= :atFrom)
         AND (CAST(:atTo AS timestamp) IS NULL OR c.createdAt <= :atTo)
@@ -115,7 +113,7 @@ public interface ChangeLogRepository extends JpaRepository<ChangeLog, Long> {
       @Param("idAfter") Long idAfter,
       @Param("empNum") String empNum,
       @Param("memo") String memo,
-      @Param("searchIp") String searchIp,
+      @Param("ipAddress") String ipAddress,
       @Param("type") ChangeLogType type,
       @Param("atFrom") Instant atFrom,
       @Param("atTo") Instant atTo,
@@ -130,15 +128,15 @@ public interface ChangeLogRepository extends JpaRepository<ChangeLog, Long> {
               OR (c.ipAddress = :ipAfter AND c.id > :idAfter)
           )
           AND (
-                  :empNum IS NULL OR EXISTS (
+                  :empNum IS NULL OR :empNum = '' OR EXISTS (
                           SELECT 1
                           FROM Employee e
                           WHERE e.id = c.employeeId
-                                  AND e.employeeNumber = :empNum
+                                  AND e.employeeNumber LIKE CONCAT('%', CAST(:empNum AS string), '%')
                   )
           )
-          AND (:memo IS NULL OR c.memo LIKE CONCAT('%', :memo, '%'))
-          AND (:searchIp IS NULL OR c.ipAddress = :searchIp)
+          AND (:memo IS NULL OR c.memo LIKE CONCAT('%', CAST(:memo AS string), '%'))
+          AND (:ipAddress IS NULL OR c.ipAddress LIKE CONCAT('%', CAST(:ipAddress AS string), '%'))
           AND (:type IS NULL OR c.type = :type)
           AND (CAST(:atFrom AS timestamp) IS NULL OR c.createdAt >= :atFrom)
           AND (CAST(:atTo AS timestamp) IS NULL OR c.createdAt <= :atTo)
@@ -149,7 +147,7 @@ public interface ChangeLogRepository extends JpaRepository<ChangeLog, Long> {
       @Param("idAfter") Long idAfter,
       @Param("empNum") String empNum,
       @Param("memo") String memo,
-      @Param("searchIp") String searchIp,
+      @Param("ipAddress") String ipAddress,
       @Param("type") ChangeLogType type,
       @Param("atFrom") Instant atFrom,
       @Param("atTo") Instant atTo,
