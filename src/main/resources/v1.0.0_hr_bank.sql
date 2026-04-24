@@ -88,6 +88,11 @@ CREATE TABLE IF NOT EXISTS backups
 
     );
 
+ALTER TABLE file_entities
+    ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'PENDING';
+
+
+
 
 
 
